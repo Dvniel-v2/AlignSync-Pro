@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import NavBar from "../components/NavBar";
 import { useRouter } from "next/navigation";
 import { fetchAuthSession, signOut } from "aws-amplify/auth";
 import {
@@ -30,9 +31,7 @@ export default function DashboardPage() {
   });
 
   // --- User Type Distribution (Chart) ---
-  const [userTypeData, setUserTypeData] = useState<
-    { type: string; active: number }[]
-  >([]);
+  const [userTypeData, setUserTypeData] = useState<{ type: string; active: number }[]>([]);
 
   // --- Fetch Auth & Dashboard Data ---
   useEffect(() => {
@@ -100,10 +99,7 @@ export default function DashboardPage() {
       </div>
       <button
         className="mt-5 bg-[#0f172a] text-white py-2 rounded-md font-semibold hover:bg-[#1e293b]"
-        onClick={() => {
-          // #API: Navigate or fetch more details from `${endpoint}`
-          console.log(`Future API call to ${endpoint}`);
-        }}
+        onClick={() => console.log(`Future API call to ${endpoint}`)}
       >
         {buttonText}
       </button>
@@ -115,6 +111,9 @@ export default function DashboardPage() {
   // -----------------------------------------------
   return (
     <div className="min-h-screen bg-[#f5f5f5] font-sans flex flex-col">
+      {/* Navigation Bar */}
+      <NavBar />
+
       {/* Header */}
       <header className="bg-white shadow-sm px-10 py-6 flex justify-between items-center">
         <div>
@@ -186,7 +185,7 @@ export default function DashboardPage() {
       {/* Placeholder for Future API Data */}
       <section className="px-10 pb-12">
         <div className="bg-white rounded-2xl p-8 shadow-md text-center text-gray-600">
-          📊 <strong>Usage Trends & Growth Metrics</strong>  
+          📊 <strong>Usage Trends & Growth Metrics</strong>
           <p className="mt-2 text-sm text-gray-500">
             #API: Connect this block to `/api/dashboard/trends`  
             (Lambda function can analyze usage over time, returning engagement curve.)
