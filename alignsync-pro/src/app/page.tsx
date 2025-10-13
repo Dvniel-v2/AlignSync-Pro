@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Amplify } from "aws-amplify";
-import { signUp, confirmSignUp, signIn } from "aws-amplify/auth";
+import { signUp, confirmSignUp, signIn, getCurrentUser } from "aws-amplify/auth";
 
 // ✅ Correct Amplify v6+ configuration
 Amplify.configure({
@@ -27,6 +27,22 @@ export default function LoginPage() {
     code: "",
   });
   const [message, setMessage] = useState("");
+
+  // ---------- Auto redirect if already signed in ----------
+  useEffect(() => {
+    const checkUser = async () => {
+      try {
+        const currentUser = await getCurrentUser();
+        if (currentUser) {
+          setMessage(`✅ Already signed in as ${currentUser.signInDetails?.loginId}`);
+          router.push("/dashboard");
+        }
+      } catch {
+        // not signed in, continue normally
+      }
+    };
+    checkUser();
+  }, [router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -66,15 +82,33 @@ export default function LoginPage() {
 
   const handleSignIn = async () => {
     try {
-      await signIn({
+      // ✅ Check if already signed in
+      try {
+        const currentUser = await getCurrentUser();
+        if (currentUser) {
+          setMessage(`✅ Already signed in as ${currentUser.signInDetails?.loginId}`);
+          router.push("/dashboard");
+          return;
+        }
+      } catch {
+        // no current session, continue
+      }
+
+      // ✅ Proceed with normal sign-in
+      const user = await signIn({
         username: form.email,
         password: form.password,
       });
 
-      // ✅ Redirect to dashboard after successful sign-in
+      setMessage(`✅ Welcome back, ${user.username || form.email}`);
       router.push("/dashboard");
     } catch (error: any) {
-      setMessage(`❌ ${error.message}`);
+      if (error.name === "UserAlreadyAuthenticatedException") {
+        setMessage("✅ You're already signed in!");
+        router.push("/dashboard");
+      } else {
+        setMessage(`❌ ${error.message}`);
+      }
     }
   };
 
