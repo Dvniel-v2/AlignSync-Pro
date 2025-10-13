@@ -4,14 +4,17 @@ import { useState } from "react";
 import { Amplify } from "aws-amplify";
 import { signUp, confirmSignUp, signIn } from "aws-amplify/auth";
 
-// ✅ Amplify v6+ configuration
+// ✅ Amplify v6+ configuration (correct shape)
 Amplify.configure({
   Auth: {
     Cognito: {
-      region: "eu-north-1",
       userPoolId: "eu-north-1_Exiy18u5t",
       userPoolClientId: "3m2u0jjjd52c9oie6f2189976a",
+      signUpVerificationMethod: "code",
     },
+  },
+  AWS: {
+    region: "eu-north-1",
   },
 });
 
@@ -82,7 +85,7 @@ export default function LoginPage() {
       <header className="mb-12 text-center">
         <h1 className="text-6xl font-bold text-[#0f172a]">AlignSync Pro</h1>
         <p className="mt-2 text-lg text-[#334155]">
-          Your productivity, synced and optimized
+          Your True-ups, synced and optimized
         </p>
       </header>
 
@@ -176,12 +179,11 @@ export default function LoginPage() {
               className="border border-gray-300 p-2 w-full rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600"
             />
             <button
-            onClick={handleSignUp}
-             className="w-full bg-[#0f172a] text-white py-2 rounded-md font-semibold hover:bg-[#1e293b]"
+              onClick={handleSignUp}
+              className="w-full bg-[#0f172a] text-white py-2 rounded-md font-semibold hover:bg-[#1e293b]"
             >
               Create Account
             </button>
-
           </>
         )}
 
