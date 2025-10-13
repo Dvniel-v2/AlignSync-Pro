@@ -19,7 +19,7 @@ export default function NavBar() {
       <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-12 flex justify-between items-center h-16">
         {/* Logo */}
         <div className="flex items-center">
-          <span className="text-2xl font-bold text-blue-600">AlignSync Pro</span>
+          
         </div>
 
         {/* Navigation Links */}
