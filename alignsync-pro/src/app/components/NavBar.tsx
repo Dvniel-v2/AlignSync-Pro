@@ -16,19 +16,14 @@ export default function NavBar() {
 
   return (
     <nav className="bg-white shadow-sm">
-      <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-12 flex justify-between items-center h-16">
-        {/* Logo */}
-        <div className="flex items-center">
-          
-        </div>
-
+      <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-12 flex justify-start items-center h-16">
         {/* Navigation Links */}
         <div className="flex space-x-6">
           {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className={`text-gray-700 hover:text-blue-600 font-medium ${
+              className={`text-gray-700 hover:text-blue-600 font-medium transition-colors duration-200 ${
                 pathname === item.href ? "text-blue-600 border-b-2 border-blue-600" : ""
               }`}
             >
