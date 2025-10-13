@@ -118,7 +118,7 @@ export default function LoginPage() {
       <header className="mb-12 text-center">
         <h1 className="text-6xl font-bold text-[#0f172a]">AlignSync Pro</h1>
         <p className="mt-2 text-lg text-[#334155]">
-          Your productivity, synced and optimized
+          Your True ups, synced and optimized
         </p>
       </header>
 

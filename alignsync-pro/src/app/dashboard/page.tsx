@@ -1,31 +1,74 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getCurrentUser, signOut } from "aws-amplify/auth";
 import { useRouter } from "next/navigation";
+import { fetchAuthSession, signOut } from "aws-amplify/auth";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
-export default function Dashboard() {
+// -----------------------------------------------
+// AlignSync Pro Dashboard (API-Ready Skeleton)
+// -----------------------------------------------
+export default function DashboardPage() {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  // ✅ Fetch authenticated user
+  // --- Primary Metrics (Top Cards) ---
+  const [stats, setStats] = useState({
+    totalPaidMembers: 0,
+    provisionalMembers: 0,
+    assetsActivity: 0,
+    engagementRate: 0,
+  });
+
+  // --- User Type Distribution (Chart) ---
+  const [userTypeData, setUserTypeData] = useState<
+    { type: string; active: number }[]
+  >([]);
+
+  // --- Fetch Auth & Dashboard Data ---
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchUserAndStats = async () => {
       try {
-        const user = await getCurrentUser();
-        setUserEmail(user.signInDetails?.loginId || "Unknown");
+        // ✅ Auth Check
+        const session = await fetchAuthSession();
+        const emailPayload = session.tokens?.idToken?.payload.email;
+        const emailStr = typeof emailPayload === "string" ? emailPayload : "Unknown User";
+        setUserEmail(emailStr);
+
+        // #API: Replace mock data with call to `GET /api/dashboard/overview`
+        setStats({
+          totalPaidMembers: 128,
+          provisionalMembers: 34,
+          assetsActivity: 412,
+          engagementRate: 78,
+        });
+
+        // #API: Replace with `/api/dashboard/user-distribution`
+        setUserTypeData([
+          { type: "Internal Users", active: 32 },
+          { type: "External Users", active: 48 },
+          { type: "Provisional Members", active: 20 },
+          { type: "Paid Members", active: 60 },
+        ]);
       } catch (err) {
-        console.warn("⚠️ No user signed in — redirecting to login...");
-        router.push("/");
-      } finally {
-        setLoading(false);
+        console.error("User not authenticated, redirecting...");
+        router.push("/"); // redirect if unauthenticated
       }
     };
-    fetchUser();
+
+    fetchUserAndStats();
   }, [router]);
 
-  // ✅ Handle Sign Out
+  // --- Sign Out Logic ---
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -35,61 +78,124 @@ export default function Dashboard() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-600">
-        Loading your dashboard...
+  // --- Reusable Stat Card Component ---
+  const StatCard = ({
+    title,
+    value,
+    subtitle,
+    buttonText,
+    endpoint,
+  }: {
+    title: string;
+    value: string | number;
+    subtitle: string;
+    buttonText: string;
+    endpoint: string; // #API: endpoint this stat connects to
+  }) => (
+    <div className="bg-white rounded-2xl shadow-md p-6 flex flex-col justify-between hover:shadow-xl transition-shadow">
+      <div>
+        <h2 className="text-2xl font-bold text-[#0f172a]">{title}</h2>
+        <p className="text-4xl font-extrabold text-blue-600 mt-3">{value}</p>
+        <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
       </div>
-    );
-  }
+      <button
+        className="mt-5 bg-[#0f172a] text-white py-2 rounded-md font-semibold hover:bg-[#1e293b]"
+        onClick={() => {
+          // #API: Navigate or fetch more details from `${endpoint}`
+          console.log(`Future API call to ${endpoint}`);
+        }}
+      >
+        {buttonText}
+      </button>
+    </div>
+  );
 
+  // -----------------------------------------------
+  // Render Layout
+  // -----------------------------------------------
   return (
-    <div className="min-h-screen flex flex-col bg-[#f5f5f5] font-sans">
-      {/* Top Navigation */}
-      <header className="flex justify-between items-center px-8 py-4 bg-white shadow-md">
-        <h1 className="text-2xl font-bold text-[#0f172a]">AlignSync Pro</h1>
+    <div className="min-h-screen bg-[#f5f5f5] font-sans flex flex-col">
+      {/* Header */}
+      <header className="bg-white shadow-sm px-10 py-6 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-[#0f172a]">
+            AlignSync Pro Dashboard
+          </h1>
+          <p className="text-gray-600">Welcome back, {userEmail}</p>
+        </div>
         <button
           onClick={handleSignOut}
-          className="bg-red-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-red-700 transition"
+          className="bg-red-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-red-700"
         >
           Sign Out
         </button>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-center p-10">
-        <h2 className="text-4xl font-bold text-[#0f172a] mb-4">
-          Welcome back, {userEmail}!
-        </h2>
-        <p className="text-gray-600 text-lg mb-10">
-          Here’s a snapshot of your productivity and syncs.
-        </p>
-
-        {/* Example Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl">
-          <div className="bg-white p-6 rounded-xl shadow-md text-center">
-            <h3 className="text-lg font-semibold text-[#0f172a] mb-2">
-              Tasks Completed
-            </h3>
-            <p className="text-3xl font-bold text-blue-600">42</p>
-          </div>
-          <div className="bg-white p-6 rounded-xl shadow-md text-center">
-            <h3 className="text-lg font-semibold text-[#0f172a] mb-2">
-              Projects Synced
-            </h3>
-            <p className="text-3xl font-bold text-green-600">8</p>
-          </div>
-          <div className="bg-white p-6 rounded-xl shadow-md text-center">
-            <h3 className="text-lg font-semibold text-[#0f172a] mb-2">
-              Active Sessions
-            </h3>
-            <p className="text-3xl font-bold text-purple-600">3</p>
-          </div>
-        </div>
+      {/* Metrics Grid */}
+      <main className="flex-1 px-10 py-8 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+        <StatCard
+          title="Total Paid Members"
+          value={stats.totalPaidMembers}
+          subtitle="Active subscriptions this month"
+          buttonText="See More"
+          endpoint="/api/members/paid"
+        />
+        <StatCard
+          title="Provisional Members"
+          value={stats.provisionalMembers}
+          subtitle="Quarterly trials and onboarding"
+          buttonText="See More"
+          endpoint="/api/members/provisional"
+        />
+        <StatCard
+          title="Assets & Workspaces"
+          value={stats.assetsActivity}
+          subtitle="Activities in the last 91 days"
+          buttonText="See More"
+          endpoint="/api/assets/overview"
+        />
+        <StatCard
+          title="Engagement Rate"
+          value={`${stats.engagementRate}%`}
+          subtitle="Active users vs total members"
+          buttonText="See More"
+          endpoint="/api/engagement"
+        />
       </main>
 
+      {/* User Distribution Chart */}
+      <section className="px-10 py-12">
+        <div className="bg-white rounded-2xl p-8 shadow-md">
+          <h2 className="text-2xl font-bold text-[#0f172a] mb-6">
+            Active Users by Type
+          </h2>
+          {/* #API: Chart should fetch from `/api/dashboard/user-distribution` */}
+          <ResponsiveContainer width="100%" height={320}>
+            <BarChart data={userTypeData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="type" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="active" fill="#2563eb" name="Active Users" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
+
+      {/* Placeholder for Future API Data */}
+      <section className="px-10 pb-12">
+        <div className="bg-white rounded-2xl p-8 shadow-md text-center text-gray-600">
+          📊 <strong>Usage Trends & Growth Metrics</strong>  
+          <p className="mt-2 text-sm text-gray-500">
+            #API: Connect this block to `/api/dashboard/trends`  
+            (Lambda function can analyze usage over time, returning engagement curve.)
+          </p>
+        </div>
+      </section>
+
       {/* Footer */}
-      <footer className="text-center py-4 text-gray-500 text-sm border-t">
+      <footer className="text-center py-6 text-xs text-gray-500 border-t">
         © {new Date().getFullYear()} AlignSync Pro. All rights reserved.
       </footer>
     </div>
