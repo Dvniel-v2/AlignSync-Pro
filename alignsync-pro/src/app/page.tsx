@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Amplify } from "aws-amplify";
 import { signUp, confirmSignUp, signIn } from "aws-amplify/auth";
 
@@ -16,6 +17,7 @@ Amplify.configure({
 });
 
 export default function LoginPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<"signin" | "signup">("signin");
   const [needsConfirmation, setNeedsConfirmation] = useState(false);
   const [form, setForm] = useState({
@@ -64,12 +66,13 @@ export default function LoginPage() {
 
   const handleSignIn = async () => {
     try {
-      const user = await signIn({
+      await signIn({
         username: form.email,
         password: form.password,
       });
-      setMessage(`✅ Welcome back, ${user.username}`);
-      // TODO: redirect to dashboard
+
+      // ✅ Redirect to dashboard after successful sign-in
+      router.push("/dashboard");
     } catch (error: any) {
       setMessage(`❌ ${error.message}`);
     }
