@@ -100,7 +100,7 @@ export default function LoginPage() {
         password: form.password,
       });
 
-      setMessage(`✅ Welcome back, ${user.username || form.email}`);
+      setMessage(`✅ Welcome back, ${form.email}`);
       router.push("/dashboard");
     } catch (error: any) {
       if (error.name === "UserAlreadyAuthenticatedException") {
