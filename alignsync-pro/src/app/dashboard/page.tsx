@@ -54,7 +54,7 @@ export default function DashboardPage() {
           { type: "Paid Members", active: 60 },
         ]);
 
-        // Mock True-Up data — replace with future API `/api/members/true-up`
+        // Mock True-Up data
         setTrueUpData([
           { name: "Jane Cooper", currentTier: "Paid Member", lastActive: "2 days ago", status: "✅ In Sync" },
           { name: "Wade Warren", currentTier: "Provisional Member", lastActive: "5 days ago", status: "⚙️ Pending Upgrade" },
@@ -98,7 +98,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#f5f5f5] font-sans flex flex-col">
-      {/* Header with NavBar and Sign Out */}
+      {/* Header */}
       <header className="bg-white shadow-sm px-10 py-6 flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-[#0f172a]">AlignSync Pro Dashboard</h1>
@@ -141,7 +141,7 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* 🧩 True-Up Process Section */}
+      {/* 🧩 True-Up Process Section (with dropdowns + save) */}
       <section className="px-10 pb-12">
         <div className="bg-white rounded-2xl shadow-md p-8">
           <h2 className="text-2xl font-bold text-[#0f172a] mb-4">Member True-Up Process</h2>
@@ -164,7 +164,35 @@ export default function DashboardPage() {
                 {trueUpData.map((user, i) => (
                   <tr key={i} className="border-b hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3">{user.name}</td>
-                    <td className="px-4 py-3">{user.currentTier}</td>
+
+                    {/* Editable Membership Dropdown */}
+                    <td className="px-4 py-3">
+                      <select
+                        value={user.currentTier}
+                        onChange={(e) => {
+                          const newTier = e.target.value;
+                          setTrueUpData((prev) =>
+                            prev.map((u, idx) =>
+                              idx === i
+                                ? {
+                                    ...u,
+                                    currentTier: newTier,
+                                    status: "⚙️ Pending Sync",
+                                  }
+                                : u
+                            )
+                          );
+                        }}
+                        className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
+                      >
+                        <option>Paid Member</option>
+                        <option>Provisional Member</option>
+                        <option>Guest</option>
+                        <option>Viewer</option>
+                        <option>Remove Access</option>
+                      </select>
+                    </td>
+
                     <td className="px-4 py-3">{user.lastActive}</td>
                     <td
                       className={`px-4 py-3 font-semibold ${
@@ -183,6 +211,37 @@ export default function DashboardPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Save Changes */}
+          <div className="mt-6 text-right">
+            <button
+              onClick={async () => {
+                console.log("Preparing to sync updates...");
+                const pending = trueUpData.filter((u) => u.status === "⚙️ Pending Sync");
+
+                if (pending.length === 0) {
+                  alert("✅ No pending changes to sync.");
+                  return;
+                }
+
+                // Simulate API call
+                console.log("Mock API payload:", pending);
+                await new Promise((res) => setTimeout(res, 1000));
+
+                // Mark synced
+                setTrueUpData((prev) =>
+                  prev.map((u) =>
+                    u.status === "⚙️ Pending Sync" ? { ...u, status: "✅ Synced" } : u
+                  )
+                );
+
+                alert(`✅ Synced ${pending.length} user(s) successfully!`);
+              }}
+              className="bg-blue-600 text-white px-6 py-2 rounded-md font-semibold hover:bg-blue-700 shadow-sm transition-colors"
+            >
+              💾 Save Changes
+            </button>
           </div>
         </div>
       </section>
