@@ -19,6 +19,7 @@ export default function DashboardPage() {
   const [statusFilter, setStatusFilter] = useState('All');
   const [loadingSync, setLoadingSync] = useState(false);
 
+  // Fetch mock data
   useEffect(() => {
     const fetchUserAndStats = async () => {
       try {
@@ -26,10 +27,8 @@ export default function DashboardPage() {
         const emailPayload = session.tokens?.idToken?.payload.email;
         setUserEmail(typeof emailPayload === "string" ? emailPayload : "Unknown User");
 
-        // Mock stats
         setStats({ totalPaidMembers: 128, provisionalMembers: 34, assetsActivity: 412, engagementRate: 78 });
 
-        // Mock bar chart
         setUserTypeData([
           { type: "Internal Users", active: 32 },
           { type: "External Users", active: 48 },
@@ -37,13 +36,12 @@ export default function DashboardPage() {
           { type: "Paid Members", active: 60 },
         ]);
 
-        // Mock True-Up data
         setTrueUpData([
-          { name: "Jane Cooper", currentTier: "Paid Member", lastActive: "2 days ago", status: "✅ In Sync", lastAssets: "3 uploaded docs, 2 shared workspaces" },
-          { name: "Wade Warren", currentTier: "Provisional Member", lastActive: "5 days ago", status: "⚙️ Pending Upgrade", lastAssets: "1 draft proposal, no recent uploads" },
-          { name: "Robert Fox", currentTier: "Guest", lastActive: "10 days ago", status: "❌ Remove Access", lastAssets: "Viewed internal dashboard" },
-          { name: "Theresa Webb", currentTier: "Viewer", lastActive: "1 day ago", status: "✅ In Sync", lastAssets: "2 asset downloads, 1 feedback log" },
-          { name: "Devon Lane", currentTier: "Provisional Member", lastActive: "8 days ago", status: "⚠️ Review Needed", lastAssets: "No activity in 7 days" },
+          { name: "Jane Cooper", currentTier: "Paid Member", lastActive: "2 days ago", status: "✅ In Sync", lastAssets: "3 uploaded docs, 2 shared workspaces", selected: false },
+          { name: "Wade Warren", currentTier: "Provisional Member", lastActive: "5 days ago", status: "⚙️ Pending Upgrade", lastAssets: "1 draft proposal, no recent uploads", selected: false },
+          { name: "Robert Fox", currentTier: "Guest", lastActive: "10 days ago", status: "❌ Remove Access", lastAssets: "Viewed internal dashboard", selected: false },
+          { name: "Theresa Webb", currentTier: "Viewer", lastActive: "1 day ago", status: "✅ In Sync", lastAssets: "2 asset downloads, 1 feedback log", selected: false },
+          { name: "Devon Lane", currentTier: "Provisional Member", lastActive: "8 days ago", status: "⚠️ Review Needed", lastAssets: "No activity in 7 days", selected: false },
         ]);
       } catch (err) {
         console.error("User not authenticated, redirecting...");
@@ -57,7 +55,7 @@ export default function DashboardPage() {
     try { await signOut(); router.push("/"); } catch (err) { console.error("Error signing out:", err); }
   };
 
-  const StatCard = ({ title, value, subtitle, buttonText, endpoint }: any) => (
+  const StatCard = ({ title, value, subtitle, endpoint }: any) => (
     <div className="bg-white rounded-2xl shadow-md p-6 flex flex-col justify-between hover:shadow-xl transition-shadow cursor-pointer" onClick={() => toast.info(`Mock API call to ${endpoint}`)}>
       <div>
         <h2 className="text-2xl font-bold text-[#0f172a]">{title}</h2>
@@ -74,8 +72,13 @@ export default function DashboardPage() {
   });
 
   const handleBulkChange = (newTier: string) => {
-    setTrueUpData(prev => prev.map(u => ({ ...u, currentTier: newTier, status: "⚙️ Pending Sync" })));
-    toast.success(`Bulk changed ${filteredTrueUp.length} user(s) to ${newTier}`);
+    const selectedUsers = trueUpData.filter(u => u.selected);
+    if (selectedUsers.length === 0) {
+      toast.warn("⚠️ No users selected for bulk action.");
+      return;
+    }
+    setTrueUpData(prev => prev.map(u => u.selected ? { ...u, currentTier: newTier, status: "⚙️ Pending Sync" } : u));
+    toast.success(`✅ Changed ${selectedUsers.length} user(s) to ${newTier}`);
   };
 
   const handleSave = async () => {
@@ -83,10 +86,12 @@ export default function DashboardPage() {
     if (pending.length === 0) { toast.info("✅ No pending changes to sync."); return; }
     setLoadingSync(true);
     await new Promise(res => setTimeout(res, 1000));
-    setTrueUpData(prev => prev.map(u => u.status.includes("⚙️") ? { ...u, status: "✅ Synced" } : u));
+    setTrueUpData(prev => prev.map(u => u.status.includes("⚙️") ? { ...u, status: "✅ Synced", selected: false } : u));
     setLoadingSync(false);
     toast.success(`✅ Synced ${pending.length} user(s) successfully!`);
   };
+
+  const allSelected = filteredTrueUp.length > 0 && filteredTrueUp.every(u => u.selected);
 
   return (
     <div className="min-h-screen bg-[#f5f5f5] font-sans flex flex-col">
@@ -134,15 +139,15 @@ export default function DashboardPage() {
         <div className="bg-white rounded-2xl shadow-md p-8">
           <h2 className="text-2xl font-bold text-[#0f172a] mb-4">Member True-Up Process</h2>
           <div className="flex flex-col sm:flex-row gap-4 mb-4">
-            <input type="text" placeholder="Search by name..." className="border rounded-md px-3 py-1 flex-1" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-            <select className="border rounded-md px-3 py-1" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <input type="text" placeholder="Search by name..." className="border rounded-md px-3 py-1 flex-1" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+            <select className="border rounded-md px-3 py-1" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
               <option>All</option>
               <option>✅</option>
               <option>⚙️</option>
               <option>⚠️</option>
               <option>❌</option>
             </select>
-            <select className="border rounded-md px-3 py-1" onChange={(e) => handleBulkChange(e.target.value)}>
+            <select className="border rounded-md px-3 py-1" onChange={e => handleBulkChange(e.target.value)}>
               <option>Bulk Actions</option>
               <option>Paid Member</option>
               <option>Provisional Member</option>
@@ -151,10 +156,14 @@ export default function DashboardPage() {
               <option>Remove Access</option>
             </select>
           </div>
+
           <div className="overflow-x-auto max-h-96">
             <table className="min-w-full text-sm text-left border border-gray-200 rounded-lg">
               <thead className="bg-[#f8fafc] border-b sticky top-0 z-10">
                 <tr>
+                  <th className="px-4 py-3">
+                    <input type="checkbox" checked={allSelected} onChange={e => setTrueUpData(prev => prev.map(u => filteredTrueUp.includes(u) ? { ...u, selected: e.target.checked } : u))} />
+                  </th>
                   <th className="px-4 py-3 font-semibold text-gray-700">Name</th>
                   <th className="px-4 py-3 font-semibold text-gray-700">Current Tier</th>
                   <th className="px-4 py-3 font-semibold text-gray-700">Last Active</th>
@@ -164,13 +173,16 @@ export default function DashboardPage() {
               </thead>
               <tbody>
                 {filteredTrueUp.length === 0 ? (
-                  <tr><td colSpan={5} className="px-4 py-6 text-center text-gray-400">No users found</td></tr>
+                  <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-400">No users found</td></tr>
                 ) : (
                   filteredTrueUp.map((user, i) => (
                     <tr key={i} className="border-b hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3">
+                        <input type="checkbox" checked={user.selected || false} onChange={e => setTrueUpData(prev => prev.map((u, idx) => idx === i ? { ...u, selected: e.target.checked } : u))} />
+                      </td>
                       <td className="px-4 py-3">{user.name}</td>
                       <td className="px-4 py-3">
-                        <select value={user.currentTier} onChange={(e) => setTrueUpData(prev => prev.map((u, idx) => idx === i ? { ...u, currentTier: e.target.value, status: "⚙️ Pending Sync" } : u))} className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
+                        <select value={user.currentTier} onChange={e => setTrueUpData(prev => prev.map((u, idx) => idx === i ? { ...u, currentTier: e.target.value, status: "⚙️ Pending Sync" } : u))} className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
                           <option>Paid Member</option>
                           <option>Provisional Member</option>
                           <option>Guest</option>
@@ -187,6 +199,7 @@ export default function DashboardPage() {
               </tbody>
             </table>
           </div>
+
           <div className="mt-6 text-right flex items-center justify-end gap-4">
             {loadingSync && <ClipLoader size={20} color="#2563eb" />}
             <button onClick={handleSave} className="bg-blue-600 text-white px-6 py-2 rounded-md font-semibold hover:bg-blue-700 shadow-sm transition-colors">
