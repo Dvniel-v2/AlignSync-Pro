@@ -10,7 +10,6 @@ export default function NavBar() {
     { label: "Dashboard", href: "/dashboard" },
     { label: "User Management", href: "/user-management" },
     { label: "Historical Logs", href: "/logs" },
-    { label: "Assets", href: "/assets" },
     { label: "Settings", href: "/settings" },
   ];
 

@@ -15,8 +15,6 @@ export default function DashboardPage() {
   const [stats, setStats] = useState({ totalPaidMembers: 0, provisionalMembers: 0, assetsActivity: 0, engagementRate: 0 });
   const [userTypeData, setUserTypeData] = useState<{ type: string; active: number }[]>([]);
   const [trueUpData, setTrueUpData] = useState<any[]>([]);
-  const [tierFilter, setTierFilter] = useState("All");
-  const [statusFilter, setStatusFilter] = useState("All");
   const [loadingSync, setLoadingSync] = useState(false);
 
   useEffect(() => {
@@ -37,13 +35,13 @@ export default function DashboardPage() {
           { type: "Paid Members", active: 60 },
         ]);
 
-        // Mock True-Up data
+        // Mock user data
         setTrueUpData([
-          { name: "Jane Cooper", currentTier: "Paid Member", lastActive: "2 days ago", status: "✅ In Sync", lastAssets: "3 uploaded docs, 2 shared workspaces", selected: false },
-          { name: "Wade Warren", currentTier: "Provisional Member", lastActive: "5 days ago", status: "⚙️ Pending Upgrade", lastAssets: "1 draft proposal, no recent uploads", selected: false },
-          { name: "Robert Fox", currentTier: "Guest", lastActive: "10 days ago", status: "❌ Remove Access", lastAssets: "Viewed internal dashboard", selected: false },
-          { name: "Theresa Webb", currentTier: "Viewer", lastActive: "1 day ago", status: "✅ In Sync", lastAssets: "2 asset downloads, 1 feedback log", selected: false },
-          { name: "Devon Lane", currentTier: "Provisional Member", lastActive: "8 days ago", status: "⚠️ Review Needed", lastAssets: "No activity in 7 days", selected: false },
+          { name: "Jane Cooper", currentTier: "Paid Member", lastActive: "2 days ago", status: "✅ In Sync", lastAssets: "3 uploaded docs, 2 shared workspaces" },
+          { name: "Wade Warren", currentTier: "Provisional Member", lastActive: "5 days ago", status: "⚙️ Pending Upgrade", lastAssets: "1 draft proposal, no recent uploads" },
+          { name: "Robert Fox", currentTier: "Guest", lastActive: "10 days ago", status: "❌ Remove Access", lastAssets: "Viewed internal dashboard" },
+          { name: "Theresa Webb", currentTier: "Viewer", lastActive: "1 day ago", status: "✅ In Sync", lastAssets: "2 asset downloads, 1 feedback log" },
+          { name: "Devon Lane", currentTier: "Provisional Member", lastActive: "8 days ago", status: "⚠️ Review Needed", lastAssets: "No activity in 7 days" },
         ]);
       } catch (err) {
         console.error("User not authenticated, redirecting...");
@@ -67,22 +65,9 @@ export default function DashboardPage() {
     </div>
   );
 
-  const filteredTrueUp = trueUpData.filter(u => {
-    const matchTier = tierFilter === "All" || u.currentTier === tierFilter;
-    const matchStatus = statusFilter === "All" || u.status.includes(statusFilter);
-    return matchTier && matchStatus;
-  });
-
-  const handleBulkChange = (newTier: string) => {
-    setTrueUpData(prev => prev.map(u => u.selected ? { ...u, currentTier: newTier, status: "⚙️ Pending Sync" } : u));
-    toast.success(`Bulk changed selected user(s) to ${newTier}`);
-  };
-
   const handleSave = async () => {
     const pending = trueUpData.filter(u => u.status.includes("⚙️"));
     if (pending.length === 0) { toast.info("✅ No pending changes to sync."); return; }
-    if (!confirm(`Are you sure you want to save ${pending.length} pending change(s)?`)) return;
-
     setLoadingSync(true);
     await new Promise(res => setTimeout(res, 1000));
     setTrueUpData(prev => prev.map(u => u.status.includes("⚙️") ? { ...u, status: "✅ Synced" } : u));
@@ -106,7 +91,7 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* Metrics Grid */}
+      {/* Stats Cards */}
       <main className="flex-1 px-10 py-8 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
         <StatCard title="Total Paid Members" value={stats.totalPaidMembers} subtitle="Active subscriptions this month" endpoint="/api/members/paid" />
         <StatCard title="Provisional Members" value={stats.provisionalMembers} subtitle="Quarterly trials and onboarding" endpoint="/api/members/provisional" />
@@ -114,7 +99,7 @@ export default function DashboardPage() {
         <StatCard title="Engagement Rate" value={`${stats.engagementRate}%`} subtitle="Active users vs total members" endpoint="/api/engagement" />
       </main>
 
-      {/* User Distribution Chart */}
+      {/* Active Users Chart */}
       <section className="px-10 py-12">
         <div className="bg-white rounded-2xl p-8 shadow-md">
           <h2 className="text-2xl font-bold text-[#0f172a] mb-6">Active Users by Type</h2>
@@ -131,86 +116,47 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* True-Up Section */}
+      {/* Pending Provisional Members */}
       <section className="px-10 pb-12">
         <div className="bg-white rounded-2xl shadow-md p-8">
-          <h2 className="text-2xl font-bold text-[#0f172a] mb-4">Member True-Up Process</h2>
+          <h2 className="text-2xl font-bold text-[#0f172a] mb-4">Pending Provisional Members</h2>
+          <p className="text-gray-600 mb-4">
+            Quick view of provisional members pending upgrade. Click "See More" for detailed assets and activity.
+          </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 mb-4">
-            <select className="border rounded-md px-3 py-1" onChange={(e) => handleBulkChange(e.target.value)}>
-              <option>Bulk Actions</option>
-              <option>Paid Member</option>
-              <option>Provisional Member</option>
-              <option>Guest</option>
-              <option>Viewer</option>
-              <option>Remove Access</option>
-            </select>
-          </div>
-
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-h-96">
             <table className="min-w-full text-sm text-left border border-gray-200 rounded-lg">
               <thead className="bg-[#f8fafc] border-b sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-3 font-semibold text-gray-700">
-                    <input type="checkbox" onChange={(e) => setTrueUpData(prev => prev.map(u => ({ ...u, selected: e.target.checked })))} />
-                  </th>
                   <th className="px-4 py-3 font-semibold text-gray-700">Name</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700 flex items-center cursor-pointer">
-                    Current Tier
-                    <select className="ml-1 border border-gray-300 rounded-md px-1 py-0.5 text-xs" onChange={(e) => setTierFilter(e.target.value)}>
-                      <option value="All">All</option>
-                      <option>Paid Member</option>
-                      <option>Provisional Member</option>
-                      <option>Guest</option>
-                      <option>Viewer</option>
-                      <option>Remove Access</option>
-                    </select>
-                  </th>
                   <th className="px-4 py-3 font-semibold text-gray-700">Last Active</th>
                   <th className="px-4 py-3 font-semibold text-gray-700">Last Assets / Activity</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700 flex items-center cursor-pointer">
-                    Status
-                    <select className="ml-1 border border-gray-300 rounded-md px-1 py-0.5 text-xs" onChange={(e) => setStatusFilter(e.target.value)}>
-                      <option value="All">All</option>
-                      <option>✅</option>
-                      <option>⚙️</option>
-                      <option>⚠️</option>
-                      <option>❌</option>
-                    </select>
-                  </th>
+                  <th className="px-4 py-3 font-semibold text-gray-700">Status</th>
+                  <th className="px-4 py-3 font-semibold text-gray-700">Action</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredTrueUp.length === 0 ? (
-                  <tr><td colSpan={7} className="px-4 py-6 text-center text-gray-400">No users found</td></tr>
-                ) : (
-                  filteredTrueUp.map((user, i) => (
+                {trueUpData
+                  .filter(u => u.currentTier === "Provisional Member" && u.status.includes("⚙️"))
+                  .map((user, i) => (
                     <tr key={i} className="border-b hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3">
-                        <input type="checkbox" checked={user.selected || false} onChange={(e) =>
-                          setTrueUpData(prev => prev.map((u, idx) => idx === i ? { ...u, selected: e.target.checked } : u))
-                        }/>
-                      </td>
                       <td className="px-4 py-3">{user.name}</td>
-                      <td className="px-4 py-3">
-                        <select value={user.currentTier} onChange={(e) => setTrueUpData(prev => prev.map((u, idx) => idx === i ? { ...u, currentTier: e.target.value, status: "⚙️ Pending Sync" } : u))} className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
-                          <option>Paid Member</option>
-                          <option>Provisional Member</option>
-                          <option>Guest</option>
-                          <option>Viewer</option>
-                          <option>Remove Access</option>
-                        </select>
-                      </td>
                       <td className="px-4 py-3">{user.lastActive}</td>
                       <td className="px-4 py-3 text-gray-600">{user.lastAssets}</td>
-                      <td className={`px-4 py-3 font-semibold ${user.status.includes("✅") ? "text-green-600" : user.status.includes("⚙️") ? "text-blue-600" : user.status.includes("⚠️") ? "text-yellow-600" : "text-red-600"}`}>{user.status}</td>
+                      <td className="px-4 py-3 font-semibold text-blue-600">{user.status}</td>
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => router.push(`/users/${encodeURIComponent(user.name)}`)}
+                          className="text-blue-600 hover:underline text-sm"
+                        >
+                          See More
+                        </button>
+                      </td>
                     </tr>
-                  ))
-                )}
+                  ))}
               </tbody>
             </table>
           </div>
-
           <div className="mt-6 text-right flex items-center justify-end gap-4">
             {loadingSync && <ClipLoader size={20} color="#2563eb" />}
             <button onClick={handleSave} className="bg-blue-600 text-white px-6 py-2 rounded-md font-semibold hover:bg-blue-700 shadow-sm transition-colors">
