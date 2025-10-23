@@ -15,11 +15,10 @@ export default function DashboardPage() {
   const [stats, setStats] = useState({ totalPaidMembers: 0, provisionalMembers: 0, assetsActivity: 0, engagementRate: 0 });
   const [userTypeData, setUserTypeData] = useState<{ type: string; active: number }[]>([]);
   const [trueUpData, setTrueUpData] = useState<any[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All');
+  const [tierFilter, setTierFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState("All");
   const [loadingSync, setLoadingSync] = useState(false);
 
-  // Fetch mock data
   useEffect(() => {
     const fetchUserAndStats = async () => {
       try {
@@ -27,8 +26,10 @@ export default function DashboardPage() {
         const emailPayload = session.tokens?.idToken?.payload.email;
         setUserEmail(typeof emailPayload === "string" ? emailPayload : "Unknown User");
 
+        // Mock stats
         setStats({ totalPaidMembers: 128, provisionalMembers: 34, assetsActivity: 412, engagementRate: 78 });
 
+        // Mock bar chart
         setUserTypeData([
           { type: "Internal Users", active: 32 },
           { type: "External Users", active: 48 },
@@ -36,6 +37,7 @@ export default function DashboardPage() {
           { type: "Paid Members", active: 60 },
         ]);
 
+        // Mock True-Up data
         setTrueUpData([
           { name: "Jane Cooper", currentTier: "Paid Member", lastActive: "2 days ago", status: "✅ In Sync", lastAssets: "3 uploaded docs, 2 shared workspaces", selected: false },
           { name: "Wade Warren", currentTier: "Provisional Member", lastActive: "5 days ago", status: "⚙️ Pending Upgrade", lastAssets: "1 draft proposal, no recent uploads", selected: false },
@@ -66,32 +68,27 @@ export default function DashboardPage() {
   );
 
   const filteredTrueUp = trueUpData.filter(u => {
-    const matchSearch = u.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchStatus = statusFilter === 'All' || u.status.includes(statusFilter);
-    return matchSearch && matchStatus;
+    const matchTier = tierFilter === "All" || u.currentTier === tierFilter;
+    const matchStatus = statusFilter === "All" || u.status.includes(statusFilter);
+    return matchTier && matchStatus;
   });
 
   const handleBulkChange = (newTier: string) => {
-    const selectedUsers = trueUpData.filter(u => u.selected);
-    if (selectedUsers.length === 0) {
-      toast.warn("⚠️ No users selected for bulk action.");
-      return;
-    }
     setTrueUpData(prev => prev.map(u => u.selected ? { ...u, currentTier: newTier, status: "⚙️ Pending Sync" } : u));
-    toast.success(`✅ Changed ${selectedUsers.length} user(s) to ${newTier}`);
+    toast.success(`Bulk changed selected user(s) to ${newTier}`);
   };
 
   const handleSave = async () => {
     const pending = trueUpData.filter(u => u.status.includes("⚙️"));
     if (pending.length === 0) { toast.info("✅ No pending changes to sync."); return; }
+    if (!confirm(`Are you sure you want to save ${pending.length} pending change(s)?`)) return;
+
     setLoadingSync(true);
     await new Promise(res => setTimeout(res, 1000));
-    setTrueUpData(prev => prev.map(u => u.status.includes("⚙️") ? { ...u, status: "✅ Synced", selected: false } : u));
+    setTrueUpData(prev => prev.map(u => u.status.includes("⚙️") ? { ...u, status: "✅ Synced" } : u));
     setLoadingSync(false);
     toast.success(`✅ Synced ${pending.length} user(s) successfully!`);
   };
-
-  const allSelected = filteredTrueUp.length > 0 && filteredTrueUp.every(u => u.selected);
 
   return (
     <div className="min-h-screen bg-[#f5f5f5] font-sans flex flex-col">
@@ -138,16 +135,9 @@ export default function DashboardPage() {
       <section className="px-10 pb-12">
         <div className="bg-white rounded-2xl shadow-md p-8">
           <h2 className="text-2xl font-bold text-[#0f172a] mb-4">Member True-Up Process</h2>
+
           <div className="flex flex-col sm:flex-row gap-4 mb-4">
-            <input type="text" placeholder="Search by name..." className="border rounded-md px-3 py-1 flex-1" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-            <select className="border rounded-md px-3 py-1" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-              <option>All</option>
-              <option>✅</option>
-              <option>⚙️</option>
-              <option>⚠️</option>
-              <option>❌</option>
-            </select>
-            <select className="border rounded-md px-3 py-1" onChange={e => handleBulkChange(e.target.value)}>
+            <select className="border rounded-md px-3 py-1" onChange={(e) => handleBulkChange(e.target.value)}>
               <option>Bulk Actions</option>
               <option>Paid Member</option>
               <option>Provisional Member</option>
@@ -157,32 +147,53 @@ export default function DashboardPage() {
             </select>
           </div>
 
-          <div className="overflow-x-auto max-h-96">
+          <div className="overflow-x-auto">
             <table className="min-w-full text-sm text-left border border-gray-200 rounded-lg">
               <thead className="bg-[#f8fafc] border-b sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-3">
-                    <input type="checkbox" checked={allSelected} onChange={e => setTrueUpData(prev => prev.map(u => filteredTrueUp.includes(u) ? { ...u, selected: e.target.checked } : u))} />
+                  <th className="px-4 py-3 font-semibold text-gray-700">
+                    <input type="checkbox" onChange={(e) => setTrueUpData(prev => prev.map(u => ({ ...u, selected: e.target.checked })))} />
                   </th>
                   <th className="px-4 py-3 font-semibold text-gray-700">Name</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700">Current Tier</th>
+                  <th className="px-4 py-3 font-semibold text-gray-700 flex items-center cursor-pointer">
+                    Current Tier
+                    <select className="ml-1 border border-gray-300 rounded-md px-1 py-0.5 text-xs" onChange={(e) => setTierFilter(e.target.value)}>
+                      <option value="All">All</option>
+                      <option>Paid Member</option>
+                      <option>Provisional Member</option>
+                      <option>Guest</option>
+                      <option>Viewer</option>
+                      <option>Remove Access</option>
+                    </select>
+                  </th>
                   <th className="px-4 py-3 font-semibold text-gray-700">Last Active</th>
                   <th className="px-4 py-3 font-semibold text-gray-700">Last Assets / Activity</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700">Status</th>
+                  <th className="px-4 py-3 font-semibold text-gray-700 flex items-center cursor-pointer">
+                    Status
+                    <select className="ml-1 border border-gray-300 rounded-md px-1 py-0.5 text-xs" onChange={(e) => setStatusFilter(e.target.value)}>
+                      <option value="All">All</option>
+                      <option>✅</option>
+                      <option>⚙️</option>
+                      <option>⚠️</option>
+                      <option>❌</option>
+                    </select>
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {filteredTrueUp.length === 0 ? (
-                  <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-400">No users found</td></tr>
+                  <tr><td colSpan={7} className="px-4 py-6 text-center text-gray-400">No users found</td></tr>
                 ) : (
                   filteredTrueUp.map((user, i) => (
                     <tr key={i} className="border-b hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3">
-                        <input type="checkbox" checked={user.selected || false} onChange={e => setTrueUpData(prev => prev.map((u, idx) => idx === i ? { ...u, selected: e.target.checked } : u))} />
+                        <input type="checkbox" checked={user.selected || false} onChange={(e) =>
+                          setTrueUpData(prev => prev.map((u, idx) => idx === i ? { ...u, selected: e.target.checked } : u))
+                        }/>
                       </td>
                       <td className="px-4 py-3">{user.name}</td>
                       <td className="px-4 py-3">
-                        <select value={user.currentTier} onChange={e => setTrueUpData(prev => prev.map((u, idx) => idx === i ? { ...u, currentTier: e.target.value, status: "⚙️ Pending Sync" } : u))} className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
+                        <select value={user.currentTier} onChange={(e) => setTrueUpData(prev => prev.map((u, idx) => idx === i ? { ...u, currentTier: e.target.value, status: "⚙️ Pending Sync" } : u))} className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
                           <option>Paid Member</option>
                           <option>Provisional Member</option>
                           <option>Guest</option>
