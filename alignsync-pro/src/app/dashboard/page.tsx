@@ -28,7 +28,7 @@ export default function DashboardPage() {
 
   const [userTypeData, setUserTypeData] = useState<{ type: string; active: number }[]>([]);
   const [trueUpData, setTrueUpData] = useState<
-    { name: string; currentTier: string; lastActive: string; status: string }[]
+    { name: string; currentTier: string; lastActive: string; status: string; lastAssets: string }[]
   >([]);
 
   useEffect(() => {
@@ -54,13 +54,43 @@ export default function DashboardPage() {
           { type: "Paid Members", active: 60 },
         ]);
 
-        // Mock True-Up data
+        // Mock True-Up data (now includes lastAssets)
         setTrueUpData([
-          { name: "Jane Cooper", currentTier: "Paid Member", lastActive: "2 days ago", status: "✅ In Sync" },
-          { name: "Wade Warren", currentTier: "Provisional Member", lastActive: "5 days ago", status: "⚙️ Pending Upgrade" },
-          { name: "Robert Fox", currentTier: "Guest", lastActive: "10 days ago", status: "❌ Remove Access" },
-          { name: "Theresa Webb", currentTier: "Viewer", lastActive: "1 day ago", status: "✅ In Sync" },
-          { name: "Devon Lane", currentTier: "Provisional Member", lastActive: "8 days ago", status: "⚠️ Review Needed" },
+          {
+            name: "Jane Cooper",
+            currentTier: "Paid Member",
+            lastActive: "2 days ago",
+            status: "✅ In Sync",
+            lastAssets: "3 uploaded docs, 2 shared workspaces",
+          },
+          {
+            name: "Wade Warren",
+            currentTier: "Provisional Member",
+            lastActive: "5 days ago",
+            status: "⚙️ Pending Upgrade",
+            lastAssets: "1 draft proposal, no recent uploads",
+          },
+          {
+            name: "Robert Fox",
+            currentTier: "Guest",
+            lastActive: "10 days ago",
+            status: "❌ Remove Access",
+            lastAssets: "Viewed internal dashboard",
+          },
+          {
+            name: "Theresa Webb",
+            currentTier: "Viewer",
+            lastActive: "1 day ago",
+            status: "✅ In Sync",
+            lastAssets: "2 asset downloads, 1 feedback log",
+          },
+          {
+            name: "Devon Lane",
+            currentTier: "Provisional Member",
+            lastActive: "8 days ago",
+            status: "⚠️ Review Needed",
+            lastAssets: "No activity in 7 days",
+          },
         ]);
       } catch (err) {
         console.error("User not authenticated, redirecting...");
@@ -118,10 +148,34 @@ export default function DashboardPage() {
 
       {/* Metrics Grid */}
       <main className="flex-1 px-10 py-8 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-        <StatCard title="Total Paid Members" value={stats.totalPaidMembers} subtitle="Active subscriptions this month" buttonText="See More" endpoint="/api/members/paid" />
-        <StatCard title="Provisional Members" value={stats.provisionalMembers} subtitle="Quarterly trials and onboarding" buttonText="See More" endpoint="/api/members/provisional" />
-        <StatCard title="Assets & Workspaces" value={stats.assetsActivity} subtitle="Activities in the last 91 days" buttonText="See More" endpoint="/api/assets/overview" />
-        <StatCard title="Engagement Rate" value={`${stats.engagementRate}%`} subtitle="Active users vs total members" buttonText="See More" endpoint="/api/engagement" />
+        <StatCard
+          title="Total Paid Members"
+          value={stats.totalPaidMembers}
+          subtitle="Active subscriptions this month"
+          buttonText="See More"
+          endpoint="/api/members/paid"
+        />
+        <StatCard
+          title="Provisional Members"
+          value={stats.provisionalMembers}
+          subtitle="Quarterly trials and onboarding"
+          buttonText="See More"
+          endpoint="/api/members/provisional"
+        />
+        <StatCard
+          title="Assets & Workspaces"
+          value={stats.assetsActivity}
+          subtitle="Activities in the last 91 days"
+          buttonText="See More"
+          endpoint="/api/assets/overview"
+        />
+        <StatCard
+          title="Engagement Rate"
+          value={`${stats.engagementRate}%`}
+          subtitle="Active users vs total members"
+          buttonText="See More"
+          endpoint="/api/engagement"
+        />
       </main>
 
       {/* User Distribution Chart */}
@@ -141,7 +195,7 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* 🧩 True-Up Process Section (with dropdowns + save) */}
+      {/* 🧩 True-Up Process Section (Now includes Last Assets/Activity) */}
       <section className="px-10 pb-12">
         <div className="bg-white rounded-2xl shadow-md p-8">
           <h2 className="text-2xl font-bold text-[#0f172a] mb-4">Member True-Up Process</h2>
@@ -157,6 +211,7 @@ export default function DashboardPage() {
                   <th className="px-4 py-3 font-semibold text-gray-700">Name</th>
                   <th className="px-4 py-3 font-semibold text-gray-700">Current Tier</th>
                   <th className="px-4 py-3 font-semibold text-gray-700">Last Active</th>
+                  <th className="px-4 py-3 font-semibold text-gray-700">Last Assets / Activity</th>
                   <th className="px-4 py-3 font-semibold text-gray-700">Status</th>
                 </tr>
               </thead>
@@ -194,6 +249,8 @@ export default function DashboardPage() {
                     </td>
 
                     <td className="px-4 py-3">{user.lastActive}</td>
+                    <td className="px-4 py-3 text-gray-600">{user.lastAssets}</td>
+
                     <td
                       className={`px-4 py-3 font-semibold ${
                         user.status.includes("✅")
@@ -213,23 +270,19 @@ export default function DashboardPage() {
             </table>
           </div>
 
-          {/* Save Changes */}
+          {/* Save Changes Button */}
           <div className="mt-6 text-right">
             <button
               onClick={async () => {
-                console.log("Preparing to sync updates...");
                 const pending = trueUpData.filter((u) => u.status === "⚙️ Pending Sync");
-
                 if (pending.length === 0) {
                   alert("✅ No pending changes to sync.");
                   return;
                 }
 
-                // Simulate API call
                 console.log("Mock API payload:", pending);
                 await new Promise((res) => setTimeout(res, 1000));
 
-                // Mark synced
                 setTrueUpData((prev) =>
                   prev.map((u) =>
                     u.status === "⚙️ Pending Sync" ? { ...u, status: "✅ Synced" } : u
