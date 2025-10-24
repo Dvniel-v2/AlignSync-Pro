@@ -8,19 +8,25 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { toast, ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import { ClipLoader } from 'react-spinners';
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function DashboardPage() {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [stats, setStats] = useState({ totalPaidMembers: 128, provisionalMembers: 34, assetsActivity: 412, engagementRate: 78 });
-  const [userTypeData, setUserTypeData] = useState([
-    { type: "Internal Users", active: 32 },
-    { type: "External Users", active: 48 },
-    { type: "Provisional Members", active: 20 },
-    { type: "Paid Members", active: 60 },
-  ]);
+  const [stats, setStats] = useState({
+    members: 0,
+    provisionalMembers: 0,
+    guests: 0,
+    viewers: 0,
+    sheets: 0,
+    workspaces: 0,
+    reports: 0,
+    dashboards: 0
+  });
+  const [userTypeData, setUserTypeData] = useState<any[]>([]);
   const [pendingUsers, setPendingUsers] = useState<any[]>([]);
   const [loadingSync, setLoadingSync] = useState(false);
+  const [expandedCard, setExpandedCard] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUserAndStats = async () => {
@@ -28,6 +34,26 @@ export default function DashboardPage() {
         const session = await fetchAuthSession();
         const emailPayload = session.tokens?.idToken?.payload.email;
         setUserEmail(typeof emailPayload === "string" ? emailPayload : "Unknown User");
+
+        // Mock stats
+        setStats({
+          members: 128,
+          provisionalMembers: 34,
+          guests: 12,
+          viewers: 56,
+          sheets: 17184,
+          workspaces: 1248,
+          reports: 24937,
+          dashboards: 6838
+        });
+
+        // Mock bar chart
+        setUserTypeData([
+          { type: "Members", value: 128, color: "#1f77b4" },
+          { type: "Provisional Members", value: 34, color: "#ff7f0e" },
+          { type: "Guest", value: 12, color: "#2ca02c" },
+          { type: "Viewers", value: 56, color: "#d62728" },
+        ]);
 
         // Mock pending provisional members
         setPendingUsers([
@@ -50,15 +76,39 @@ export default function DashboardPage() {
     try { await signOut(); router.push("/"); } catch (err) { console.error("Error signing out:", err); }
   };
 
-  const StatCard = ({ title, value, subtitle, endpoint }: any) => (
-    <div className="bg-white rounded-2xl shadow-md p-6 flex flex-col justify-between hover:shadow-xl transition-shadow cursor-pointer min-w-[220px]"
-      onClick={() => toast.info(`Mock API call to ${endpoint}`)}
+  const StatCard = ({ title, value, subtitle, expandKey, chartData }: any) => (
+    <div
+      className="bg-white rounded-2xl shadow-md p-6 flex flex-col justify-between hover:shadow-xl transition-shadow cursor-pointer"
+      onClick={() => setExpandedCard(expandedCard === expandKey ? null : expandKey)}
     >
       <div>
         <h2 className="text-2xl font-bold text-[#0f172a]">{title}</h2>
         <p className="text-4xl font-extrabold text-blue-600 mt-3">{value}</p>
         <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
       </div>
+
+      <AnimatePresence>
+        {expandedCard === expandKey && chartData && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 320 }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mt-4"
+          >
+            <ResponsiveContainer width="100%" height={320}>
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="type" />
+                <YAxis />
+                <Tooltip />
+                {chartData.map((item, i) => (
+                  <Bar key={i} dataKey="value" fill={item.color} name={item.type} />
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 
@@ -78,39 +128,46 @@ export default function DashboardPage() {
         </div>
         <div className="flex items-center space-x-8">
           <NavBar />
-          <button
-            onClick={handleSignOut}
-            className="bg-red-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-red-700"
-          >
-            Sign Out
-          </button>
+          <button onClick={handleSignOut} className="bg-red-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-red-700">Sign Out</button>
         </div>
       </header>
 
       {/* Stats Cards */}
       <main className="flex-1 px-10 py-8 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-        <StatCard title="Total Paid Members" value={stats.totalPaidMembers} subtitle="Active subscriptions this month" endpoint="/api/members/paid" />
-        <StatCard title="Provisional Members" value={stats.provisionalMembers} subtitle="Quarterly trials and onboarding" endpoint="/api/members/provisional" />
-        <StatCard title="Assets & Workspaces" value={stats.assetsActivity} subtitle="Activities in the last 91 days" endpoint="/api/assets/overview" />
-        <StatCard title="Engagement Rate" value={`${stats.engagementRate}%`} subtitle="Active users vs total members" endpoint="/api/engagement" />
+        <StatCard
+          title="Seat / Member Types"
+          value={stats.members + stats.provisionalMembers + stats.guests + stats.viewers}
+          subtitle={`Members: ${stats.members} | Provisional: ${stats.provisionalMembers} | Guests: ${stats.guests} | Viewers: ${stats.viewers}`}
+          expandKey="members"
+          chartData={userTypeData}
+        />
+        <StatCard
+          title="Assets"
+          value={stats.sheets + stats.workspaces + stats.reports + stats.dashboards}
+          subtitle={`Sheets: ${stats.sheets} | Workspaces: ${stats.workspaces} | Reports: ${stats.reports} | Dashboards: ${stats.dashboards}`}
+          expandKey="assets"
+          chartData={[
+            { type: "Sheets", value: stats.sheets, color: "#1f77b4" },
+            { type: "Workspaces", value: stats.workspaces, color: "#ff7f0e" },
+            { type: "Reports", value: stats.reports, color: "#2ca02c" },
+            { type: "Dashboards", value: stats.dashboards, color: "#d62728" },
+          ]}
+        />
+        <StatCard
+          title="Billing Cycle"
+          value="$15,248"
+          subtitle="Current month total"
+          expandKey="billing"
+          chartData={null}
+        />
+        <StatCard
+          title="Payment Due"
+          value="$2,487"
+          subtitle="Due this month"
+          expandKey="payment"
+          chartData={null}
+        />
       </main>
-
-      {/* Active Users Chart */}
-      <section className="px-10 py-12">
-        <div className="bg-white rounded-2xl p-8 shadow-md">
-          <h2 className="text-2xl font-bold text-[#0f172a] mb-6">Active Users by Type</h2>
-          <ResponsiveContainer width="100%" height={320}>
-            <BarChart data={userTypeData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="type" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="active" fill="#2563eb" name="Active Users" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </section>
 
       {/* Pending Provisional Members */}
       <section className="px-10 pb-12">
@@ -151,16 +208,20 @@ export default function DashboardPage() {
               </tbody>
             </table>
           </div>
-
           <div className="mt-6 text-right flex items-center justify-end gap-4">
             {loadingSync && <ClipLoader size={20} color="#2563eb" />}
-            <button
-              onClick={handleSave}
-              className="bg-blue-600 text-white px-6 py-2 rounded-md font-semibold hover:bg-blue-700 shadow-sm transition-colors"
-            >
+            <button onClick={handleSave} className="bg-blue-600 text-white px-6 py-2 rounded-md font-semibold hover:bg-blue-700 shadow-sm transition-colors">
               💾 Save Changes
             </button>
           </div>
+        </div>
+      </section>
+
+      {/* Placeholder for Usage Trends */}
+      <section className="px-10 pb-12">
+        <div className="bg-white rounded-2xl p-8 shadow-md text-center text-gray-600">
+          📊 <strong>Usage Trends & Growth Metrics</strong>
+          <p className="mt-2 text-sm text-gray-500">#API: Connect this block to <code>/api/dashboard/trends</code></p>
         </div>
       </section>
 
