@@ -14,7 +14,7 @@ export default function DashboardPage() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [stats, setStats] = useState({ totalPaidMembers: 0, provisionalMembers: 0, assetsActivity: 0, engagementRate: 0 });
   const [userTypeData, setUserTypeData] = useState<{ type: string; active: number }[]>([]);
-  const [trueUpData, setTrueUpData] = useState<any[]>([]);
+  const [pendingUsers, setPendingUsers] = useState<any[]>([]);
   const [loadingSync, setLoadingSync] = useState(false);
 
   useEffect(() => {
@@ -35,13 +35,14 @@ export default function DashboardPage() {
           { type: "Paid Members", active: 60 },
         ]);
 
-        // Mock user data
-        setTrueUpData([
-          { name: "Jane Cooper", currentTier: "Paid Member", lastActive: "2 days ago", status: "✅ In Sync", lastAssets: "3 uploaded docs, 2 shared workspaces" },
-          { name: "Wade Warren", currentTier: "Provisional Member", lastActive: "5 days ago", status: "⚙️ Pending Upgrade", lastAssets: "1 draft proposal, no recent uploads" },
-          { name: "Robert Fox", currentTier: "Guest", lastActive: "10 days ago", status: "❌ Remove Access", lastAssets: "Viewed internal dashboard" },
-          { name: "Theresa Webb", currentTier: "Viewer", lastActive: "1 day ago", status: "✅ In Sync", lastAssets: "2 asset downloads, 1 feedback log" },
-          { name: "Devon Lane", currentTier: "Provisional Member", lastActive: "8 days ago", status: "⚠️ Review Needed", lastAssets: "No activity in 7 days" },
+        // Mock pending provisional members
+        setPendingUsers([
+          { name: "Jane Cooper", lastActive: "2 days ago", lastAssets: "3 uploaded docs, 2 shared workspaces", status: "Pending" },
+          { name: "Wade Warren", lastActive: "5 days ago", lastAssets: "1 draft proposal, no recent uploads", status: "Pending" },
+          { name: "Devon Lane", lastActive: "8 days ago", lastAssets: "No activity in 7 days", status: "Pending" },
+          { name: "Robert Fox", lastActive: "10 days ago", lastAssets: "Viewed internal dashboard", status: "Pending" },
+          { name: "Theresa Webb", lastActive: "1 day ago", lastAssets: "2 asset downloads, 1 feedback log", status: "Pending" },
+          { name: "Alex Morgan", lastActive: "7 days ago", lastAssets: "1 shared doc, 2 comments", status: "Pending" },
         ]);
       } catch (err) {
         console.error("User not authenticated, redirecting...");
@@ -66,13 +67,7 @@ export default function DashboardPage() {
   );
 
   const handleSave = async () => {
-    const pending = trueUpData.filter(u => u.status.includes("⚙️"));
-    if (pending.length === 0) { toast.info("✅ No pending changes to sync."); return; }
-    setLoadingSync(true);
-    await new Promise(res => setTimeout(res, 1000));
-    setTrueUpData(prev => prev.map(u => u.status.includes("⚙️") ? { ...u, status: "✅ Synced" } : u));
-    setLoadingSync(false);
-    toast.success(`✅ Synced ${pending.length} user(s) successfully!`);
+    toast.info("✅ No backend sync implemented yet.");
   };
 
   return (
@@ -136,24 +131,22 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {trueUpData
-                  .filter(u => u.currentTier === "Provisional Member" && u.status.includes("⚙️"))
-                  .map((user, i) => (
-                    <tr key={i} className="border-b hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3">{user.name}</td>
-                      <td className="px-4 py-3">{user.lastActive}</td>
-                      <td className="px-4 py-3 text-gray-600">{user.lastAssets}</td>
-                      <td className="px-4 py-3 font-semibold text-blue-600">{user.status}</td>
-                      <td className="px-4 py-3">
-                        <button
-                          onClick={() => router.push(`/users/${encodeURIComponent(user.name)}`)}
-                          className="text-blue-600 hover:underline text-sm"
-                        >
-                          See More
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                {pendingUsers.map((user, i) => (
+                  <tr key={i} className="border-b hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3">{user.name}</td>
+                    <td className="px-4 py-3">{user.lastActive}</td>
+                    <td className="px-4 py-3 text-gray-600">{user.lastAssets}</td>
+                    <td className="px-4 py-3 font-semibold text-yellow-600">{user.status}</td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => router.push(`/users/${encodeURIComponent(user.name)}`)}
+                        className="text-blue-600 hover:underline text-sm"
+                      >
+                        See More
+                      </button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
