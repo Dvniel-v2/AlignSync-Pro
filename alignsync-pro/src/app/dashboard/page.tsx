@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
 import { useRouter } from "next/navigation";
 import { fetchAuthSession, signOut } from "aws-amplify/auth";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { toast, ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import { ClipLoader } from 'react-spinners';
@@ -25,7 +25,6 @@ export default function DashboardPage() {
   });
   const [userTypeData, setUserTypeData] = useState<any[]>([]);
   const [pendingUsers, setPendingUsers] = useState<any[]>([]);
-  const [loadingSync, setLoadingSync] = useState(false);
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
 
   useEffect(() => {
@@ -78,7 +77,7 @@ export default function DashboardPage() {
 
   const StatCard = ({ title, value, subtitle, expandKey, chartData }: any) => (
     <div
-      className="bg-white rounded-2xl shadow-md p-6 flex flex-col justify-between hover:shadow-xl transition-shadow cursor-pointer"
+      className="bg-white rounded-2xl shadow-md p-6 flex flex-col justify-between hover:shadow-xl transition-shadow cursor-pointer min-h-[150px]"
       onClick={() => setExpandedCard(expandedCard === expandKey ? null : expandKey)}
     >
       <div>
@@ -111,10 +110,6 @@ export default function DashboardPage() {
       </AnimatePresence>
     </div>
   );
-
-  const handleSave = async () => {
-    toast.info("✅ No backend sync implemented yet.");
-  };
 
   return (
     <div className="min-h-screen bg-[#f5f5f5] font-sans flex flex-col">
@@ -207,12 +202,6 @@ export default function DashboardPage() {
                 ))}
               </tbody>
             </table>
-          </div>
-          <div className="mt-6 text-right flex items-center justify-end gap-4">
-            {loadingSync && <ClipLoader size={20} color="#2563eb" />}
-            <button onClick={handleSave} className="bg-blue-600 text-white px-6 py-2 rounded-md font-semibold hover:bg-blue-700 shadow-sm transition-colors">
-              💾 Save Changes
-            </button>
           </div>
         </div>
       </section>
