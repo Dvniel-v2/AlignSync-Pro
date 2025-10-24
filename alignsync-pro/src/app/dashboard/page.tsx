@@ -4,7 +4,16 @@ import { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
 import { useRouter } from "next/navigation";
 import { fetchAuthSession, signOut } from "aws-amplify/auth";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { ClipLoader } from "react-spinners";
@@ -13,14 +22,18 @@ export default function DashboardPage() {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [stats, setStats] = useState({
-    totalMembers: 0,
-    assetsActivity: 0,
-    billingCycle: "Quarterly",
-    paymentDue: "$0",
+    members: 128,
+    provisionalMembers: 34,
+    guests: 12,
+    viewers: 22,
+    assetsActivity: 412,
+    engagementRate: 78,
   });
-  const [userTypeData, setUserTypeData] = useState<{ type: string; active: number }[]>([]);
   const [pendingUsers, setPendingUsers] = useState<any[]>([]);
   const [loadingSync, setLoadingSync] = useState(false);
+
+  // Expansion toggles for each section
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUserAndStats = async () => {
@@ -29,33 +42,15 @@ export default function DashboardPage() {
         const emailPayload = session.tokens?.idToken?.payload.email;
         setUserEmail(typeof emailPayload === "string" ? emailPayload : "Unknown User");
 
-        // Mock stats updated
-        setStats({
-          totalMembers: 162, // Paid + Provisional
-          assetsActivity: 412,
-          billingCycle: "Quarterly (Next: Dec 31, 2025)",
-          paymentDue: "$12,480",
-        });
-
-        // Mock bar chart data
-        setUserTypeData([
-          { type: "Internal Users", active: 32 },
-          { type: "External Users", active: 48 },
-          { type: "Provisional Members", active: 20 },
-          { type: "Paid Members", active: 62 },
-        ]);
-
-        // Mock pending provisional members
         setPendingUsers([
-          { name: "Jane Cooper", lastActive: "2 days ago", lastAssets: "3 uploaded docs, 2 shared workspaces", status: "Pending" },
-          { name: "Wade Warren", lastActive: "5 days ago", lastAssets: "1 draft proposal, no recent uploads", status: "Pending" },
-          { name: "Devon Lane", lastActive: "8 days ago", lastAssets: "No activity in 7 days", status: "Pending" },
-          { name: "Robert Fox", lastActive: "10 days ago", lastAssets: "Viewed internal dashboard", status: "Pending" },
-          { name: "Theresa Webb", lastActive: "1 day ago", lastAssets: "2 asset downloads, 1 feedback log", status: "Pending" },
-          { name: "Alex Morgan", lastActive: "7 days ago", lastAssets: "1 shared doc, 2 comments", status: "Pending" },
+          { name: "Jane Cooper", lastActive: "2 days ago", lastAssets: "3 uploaded docs", status: "Pending" },
+          { name: "Wade Warren", lastActive: "5 days ago", lastAssets: "1 draft proposal", status: "Pending" },
+          { name: "Devon Lane", lastActive: "8 days ago", lastAssets: "No activity", status: "Pending" },
+          { name: "Robert Fox", lastActive: "10 days ago", lastAssets: "Viewed dashboard", status: "Pending" },
+          { name: "Theresa Webb", lastActive: "1 day ago", lastAssets: "2 downloads", status: "Pending" },
+          { name: "Alex Morgan", lastActive: "7 days ago", lastAssets: "1 shared doc", status: "Pending" },
         ]);
-      } catch (err) {
-        console.error("User not authenticated, redirecting...");
+      } catch {
         router.push("/");
       }
     };
@@ -63,30 +58,60 @@ export default function DashboardPage() {
   }, [router]);
 
   const handleSignOut = async () => {
-    try {
-      await signOut();
-      router.push("/");
-    } catch (err) {
-      console.error("Error signing out:", err);
-    }
+    await signOut();
+    router.push("/");
   };
 
-  const StatCard = ({ title, value, subtitle, endpoint }: any) => (
-    <div
-      className="bg-white rounded-2xl shadow-md p-6 flex flex-col justify-between hover:shadow-xl transition-shadow cursor-pointer"
-      onClick={() => toast.info(`Mock API call to ${endpoint}`)}
-    >
-      <div>
-        <h2 className="text-2xl font-bold text-[#0f172a]">{title}</h2>
-        <p className="text-4xl font-extrabold text-blue-600 mt-3">{value}</p>
-        <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
-      </div>
-    </div>
-  );
+  const toggleExpand = (card: string) => {
+    setExpanded(expanded === card ? null : card);
+  };
 
   const handleSave = async () => {
     toast.info("✅ No backend sync implemented yet.");
   };
+
+  const seatBreakdownData = [
+    { type: "Members", count: stats.members },
+    { type: "Provisional Members", count: stats.provisionalMembers },
+    { type: "Guests", count: stats.guests },
+    { type: "Viewers", count: stats.viewers },
+  ];
+
+  const assetsBreakdownData = [
+    { type: "Sheets", count: 17184 },
+    { type: "Workspaces", count: 1248 },
+    { type: "Reports", count: 24937 },
+    { type: "Dashboards", count: 6838 },
+  ];
+
+  const billingBreakdownData = [
+    { type: "Monthly", count: 120 },
+    { type: "Quarterly", count: 25 },
+    { type: "Annual", count: 10 },
+  ];
+
+  const paymentBreakdownData = [
+    { type: "Paid", count: 2840 },
+    { type: "Pending", count: 620 },
+    { type: "Overdue", count: 140 },
+  ];
+
+  const ExpandableCard = ({ title, children }: any) => (
+    <section className="px-10 pb-12">
+      <div className="bg-white rounded-2xl shadow-md p-8">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-[#0f172a]">{title}</h2>
+          <button
+            onClick={() => setExpanded(null)}
+            className="text-sm text-gray-500 hover:text-gray-700"
+          >
+            ✖ Close
+          </button>
+        </div>
+        {children}
+      </div>
+    </section>
+  );
 
   return (
     <div className="min-h-screen bg-[#f5f5f5] font-sans flex flex-col">
@@ -109,80 +134,144 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* Updated Stat Cards */}
+      {/* Stat Cards */}
       <main className="flex-1 px-10 py-8 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-        <StatCard
-          title="Seat / Member Types"
-          value={stats.totalMembers}
-          subtitle="Paid + Provisional members combined"
-          endpoint="/api/members/overview"
-        />
-        <StatCard
-          title="Assets & Workspaces"
-          value={stats.assetsActivity}
-          subtitle="Active assets and workspace activity"
-          endpoint="/api/assets/overview"
-        />
-        <StatCard
-          title="Billing Cycle"
-          value={stats.billingCycle}
-          subtitle="Current billing schedule"
-          endpoint="/api/billing/cycle"
-        />
-        <StatCard
-          title="Payment Due"
-          value={stats.paymentDue}
-          subtitle="Pending amount for this billing cycle"
-          endpoint="/api/billing/payment-due"
-        />
+        <div
+          className="bg-white rounded-2xl shadow-md p-6 hover:shadow-xl cursor-pointer transition"
+          onClick={() => toggleExpand("seat")}
+        >
+          <h2 className="text-2xl font-bold text-[#0f172a] mb-4">Seat / Member Types</h2>
+          <p>Members: {stats.members}</p>
+          <p>Provisional: {stats.provisionalMembers}</p>
+          <p>Guests: {stats.guests}</p>
+          <p>Viewers: {stats.viewers}</p>
+          <p className="text-sm text-gray-500 mt-4">Click to view details</p>
+        </div>
+
+        <div
+          className="bg-white rounded-2xl shadow-md p-6 hover:shadow-xl cursor-pointer transition"
+          onClick={() => toggleExpand("assets")}
+        >
+          <h2 className="text-2xl font-bold text-[#0f172a] mb-4">Assets & Workspaces</h2>
+          <p>Sheets: 17,184</p>
+          <p>Workspaces: 1,248</p>
+          <p>Reports: 24,937</p>
+          <p>Dashboards: 6,838</p>
+          <p className="text-sm text-gray-500 mt-4">Click to view details</p>
+        </div>
+
+        <div
+          className="bg-white rounded-2xl shadow-md p-6 hover:shadow-xl cursor-pointer transition"
+          onClick={() => toggleExpand("billing")}
+        >
+          <h2 className="text-2xl font-bold text-[#0f172a] mb-4">Billing Cycle</h2>
+          <p>Cycle: Monthly</p>
+          <p>Next Renewal: Oct 31, 2025</p>
+          <p>Auto-Renew: Enabled</p>
+          <p className="text-sm text-gray-500 mt-4">Click to view breakdown</p>
+        </div>
+
+        <div
+          className="bg-white rounded-2xl shadow-md p-6 hover:shadow-xl cursor-pointer transition"
+          onClick={() => toggleExpand("payment")}
+        >
+          <h2 className="text-2xl font-bold text-[#0f172a] mb-4">Payment Due</h2>
+          <p>Total Due: $2,840</p>
+          <p>Next Invoice: Oct 31, 2025</p>
+          <p>Status: Active</p>
+          <p className="text-sm text-gray-500 mt-4">Click to view payment trends</p>
+        </div>
       </main>
 
-      {/* Active Users Chart */}
-      <section className="px-10 py-12">
-        <div className="bg-white rounded-2xl p-8 shadow-md">
-          <h2 className="text-2xl font-bold text-[#0f172a] mb-6">Active Users by Type</h2>
+      {/* Expanded Card Dashboards */}
+      {expanded === "seat" && (
+        <ExpandableCard title="Seat / Member Type Breakdown">
           <ResponsiveContainer width="100%" height={320}>
-            <BarChart data={userTypeData}>
+            <BarChart data={seatBreakdownData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="type" />
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar dataKey="active" fill="#5a85e1ff" name="Active Users" />
+              <Bar dataKey="count" fill="#3b82f6" />
             </BarChart>
           </ResponsiveContainer>
-        </div>
-      </section>
+        </ExpandableCard>
+      )}
 
-      {/* Pending Provisional Members */}
+      {expanded === "assets" && (
+        <ExpandableCard title="Assets & Workspaces Breakdown">
+          <ResponsiveContainer width="100%" height={320}>
+            <BarChart data={assetsBreakdownData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="type" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="count" fill="#22c55e" />
+            </BarChart>
+          </ResponsiveContainer>
+        </ExpandableCard>
+      )}
+
+      {expanded === "billing" && (
+        <ExpandableCard title="Billing Cycle Overview">
+          <ResponsiveContainer width="100%" height={320}>
+            <BarChart data={billingBreakdownData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="type" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="count" fill="#f59e0b" />
+            </BarChart>
+          </ResponsiveContainer>
+        </ExpandableCard>
+      )}
+
+      {expanded === "payment" && (
+        <ExpandableCard title="Payment Status Breakdown">
+          <ResponsiveContainer width="100%" height={320}>
+            <BarChart data={paymentBreakdownData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="type" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="count" fill="#ef4444" />
+            </BarChart>
+          </ResponsiveContainer>
+        </ExpandableCard>
+      )}
+
+      {/* Pending Members */}
       <section className="px-10 pb-12">
         <div className="bg-white rounded-2xl shadow-md p-8">
           <h2 className="text-2xl font-bold text-[#0f172a] mb-4">Pending Provisional Members</h2>
           <p className="text-gray-600 mb-4">
-            Quick view of provisional members pending upgrade. Click "See More" for detailed assets and activity.
+            Quick view of provisional members pending upgrade.
           </p>
-
           <div className="overflow-x-auto max-h-96">
             <table className="min-w-full text-sm text-left border border-gray-200 rounded-lg">
               <thead className="bg-[#f8fafc] border-b sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-3 font-semibold text-gray-700">Name</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700">Last Active</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700">Last Assets / Activity</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700">Status</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700">Action</th>
+                  <th className="px-4 py-3">Name</th>
+                  <th className="px-4 py-3">Last Active</th>
+                  <th className="px-4 py-3">Last Assets / Activity</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Action</th>
                 </tr>
               </thead>
               <tbody>
-                {pendingUsers.map((user, i) => (
+                {pendingUsers.map((u, i) => (
                   <tr key={i} className="border-b hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3">{user.name}</td>
-                    <td className="px-4 py-3">{user.lastActive}</td>
-                    <td className="px-4 py-3 text-gray-600">{user.lastAssets}</td>
-                    <td className="px-4 py-3 font-semibold text-yellow-600">{user.status}</td>
+                    <td className="px-4 py-3">{u.name}</td>
+                    <td className="px-4 py-3">{u.lastActive}</td>
+                    <td className="px-4 py-3 text-gray-600">{u.lastAssets}</td>
+                    <td className="px-4 py-3 text-yellow-600 font-semibold">{u.status}</td>
                     <td className="px-4 py-3">
                       <button
-                        onClick={() => router.push(`/users/${encodeURIComponent(user.name)}`)}
+                        onClick={() => router.push(`/users/${encodeURIComponent(u.name)}`)}
                         className="text-blue-600 hover:underline text-sm"
                       >
                         See More
@@ -202,16 +291,6 @@ export default function DashboardPage() {
               💾 Save Changes
             </button>
           </div>
-        </div>
-      </section>
-
-      {/* Placeholder for Usage Trends */}
-      <section className="px-10 pb-12">
-        <div className="bg-white rounded-2xl p-8 shadow-md text-center text-gray-600">
-          📊 <strong>Usage Trends & Growth Metrics</strong>
-          <p className="mt-2 text-sm text-gray-500">
-            #API: Connect this block to <code>/api/dashboard/trends</code>
-          </p>
         </div>
       </section>
 
