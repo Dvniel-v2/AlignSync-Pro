@@ -12,10 +12,15 @@ import { ClipLoader } from 'react-spinners';
 export default function DashboardPage() {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [stats, setStats] = useState({ totalPaidMembers: 0, provisionalMembers: 0, guestMembers: 0, viewers: 0 });
+  const [stats, setStats] = useState({
+    members: 128,
+    provisionalMembers: 34,
+    guestMembers: 12,
+    viewers: 45,
+  });
   const [userTypeData, setUserTypeData] = useState<{ type: string; active: number }[]>([]);
   const [pendingUsers, setPendingUsers] = useState<any[]>([]);
-  const [loadingSync, setLoadingSync] = useState(false);
+  const [showAssets, setShowAssets] = useState(false);
 
   useEffect(() => {
     const fetchUserAndStats = async () => {
@@ -24,15 +29,12 @@ export default function DashboardPage() {
         const emailPayload = session.tokens?.idToken?.payload.email;
         setUserEmail(typeof emailPayload === "string" ? emailPayload : "Unknown User");
 
-        // Mock stats
-        setStats({ totalPaidMembers: 128, provisionalMembers: 34, guestMembers: 12, viewers: 18 });
-
-        // Mock bar chart
+        // Mock bar chart data
         setUserTypeData([
-          { type: "Internal Users", active: 32 },
-          { type: "External Users", active: 48 },
-          { type: "Provisional Members", active: 20 },
-          { type: "Paid Members", active: 60 },
+          { type: "Members", active: stats.members },
+          { type: "Provisional Members", active: stats.provisionalMembers },
+          { type: "Guests", active: stats.guestMembers },
+          { type: "Viewers", active: stats.viewers },
         ]);
 
         // Mock pending provisional members
@@ -56,8 +58,8 @@ export default function DashboardPage() {
     try { await signOut(); router.push("/"); } catch (err) { console.error("Error signing out:", err); }
   };
 
-  const StatCard = ({ title, value, subtitle, endpoint }: any) => (
-    <div className="bg-white rounded-2xl shadow-md p-6 flex flex-col justify-between hover:shadow-xl transition-shadow cursor-pointer" onClick={() => toast.info(`Mock API call to ${endpoint}`)}>
+  const StatCard = ({ title, value, subtitle, onClick }: any) => (
+    <div className="bg-white rounded-2xl shadow-md p-6 flex flex-col justify-between hover:shadow-xl transition-shadow cursor-pointer min-h-[150px]" onClick={onClick}>
       <div>
         <h2 className="text-2xl font-bold text-[#0f172a]">{title}</h2>
         <p className="text-4xl font-extrabold text-blue-600 mt-3">{value}</p>
@@ -84,13 +86,33 @@ export default function DashboardPage() {
 
       {/* Stats Cards */}
       <main className="flex-1 px-10 py-8 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-        <StatCard title="Members" value={stats.totalPaidMembers} subtitle="Active subscriptions this month" endpoint="/api/members/paid" />
-        <StatCard title="Provisional Members" value={stats.provisionalMembers} subtitle="Quarterly trials and onboarding" endpoint="/api/members/provisional" />
-        <StatCard title="Guest Members" value={stats.guestMembers} subtitle="External guest users" endpoint="/api/members/guest" />
-        <StatCard title="Viewers" value={stats.viewers} subtitle="Read-only access users" endpoint="/api/members/viewers" />
+        <StatCard
+          title="Members"
+          value={stats.members}
+          subtitle="Total active members"
+          onClick={() => toast.info("Mock dashboard for Members")}
+        />
+        <StatCard
+          title="Provisional Members"
+          value={stats.provisionalMembers}
+          subtitle="Trial & onboarding"
+          onClick={() => toast.info("Mock dashboard for Provisional Members")}
+        />
+        <StatCard
+          title="Guests"
+          value={stats.guestMembers}
+          subtitle="Limited access users"
+          onClick={() => toast.info("Mock dashboard for Guests")}
+        />
+        <StatCard
+          title="Viewers"
+          value={stats.viewers}
+          subtitle="Read-only users"
+          onClick={() => toast.info("Mock dashboard for Viewers")}
+        />
       </main>
 
-      {/* Active Users Chart */}
+      {/* Active Users by Type */}
       <section className="px-10 py-12">
         <div className="bg-white rounded-2xl p-8 shadow-md">
           <h2 className="text-2xl font-bold text-[#0f172a] mb-6">Active Users by Type</h2>
@@ -103,7 +125,10 @@ export default function DashboardPage() {
               <Legend />
               <Bar dataKey="active" name="Active Users">
                 {userTypeData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={["#5a85e1ff", "#34d399", "#fbbf24", "#f87171"][index % 4]} />
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={["#5a85e1ff", "#34d399", "#fbbf24", "#f87171"][index % 4]}
+                  />
                 ))}
               </Bar>
             </BarChart>
@@ -111,11 +136,26 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* Pending Provisional Members */}
+      {/* Expandable Assets Card */}
+      <section className="px-10 pb-12">
+        <div className="bg-white rounded-2xl shadow-md p-8">
+          <h2 className="text-2xl font-bold text-[#0f172a] mb-6">Assets & Workspaces</h2>
+          <StatCard
+            title="Assets Overview"
+            value={showAssets ? "Sheets 17,184 | Workspaces 1,248 | Reports 24,937 | Dashboards 6,838" : "Click to expand"}
+            subtitle=""
+            onClick={() => setShowAssets(!showAssets)}
+          />
+        </div>
+      </section>
+
+      {/* Pending Provisional Members Table */}
       <section className="px-10 pb-12">
         <div className="bg-white rounded-2xl shadow-md p-8">
           <h2 className="text-2xl font-bold text-[#0f172a] mb-4">Pending Provisional Members</h2>
-          <p className="text-gray-600 mb-4">Quick view of provisional members pending upgrade. Click "See More" for detailed assets and activity.</p>
+          <p className="text-gray-600 mb-4">
+            Quick view of provisional members pending upgrade. Click "See More" for detailed assets and activity.
+          </p>
 
           <div className="overflow-x-auto max-h-96">
             <table className="min-w-full text-sm text-left border border-gray-200 rounded-lg">
@@ -151,14 +191,7 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* Placeholder for Usage Trends */}
-      <section className="px-10 pb-12">
-        <div className="bg-white rounded-2xl p-8 shadow-md text-center text-gray-600">
-          📊 <strong>Usage Trends & Growth Metrics</strong>
-          <p className="mt-2 text-sm text-gray-500">#API: Connect this block to <code>/api/dashboard/trends</code></p>
-        </div>
-      </section>
-
+      {/* Footer */}
       <footer className="text-center py-6 text-xs text-gray-500 border-t">
         © {new Date().getFullYear()} AlignSync Pro. All rights reserved.
       </footer>
