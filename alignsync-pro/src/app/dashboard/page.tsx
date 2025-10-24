@@ -4,11 +4,25 @@ import { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
 import { useRouter } from "next/navigation";
 import { fetchAuthSession, signOut } from "aws-amplify/auth";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer
+} from "recharts";
 import { toast, ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import { ClipLoader } from 'react-spinners';
 import { motion, AnimatePresence } from "framer-motion";
+
+interface ChartItem {
+  type: string;
+  value: number;
+  color: string;
+}
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -23,9 +37,10 @@ export default function DashboardPage() {
     reports: 0,
     dashboards: 0
   });
-  const [userTypeData, setUserTypeData] = useState<any[]>([]);
+  const [userTypeData, setUserTypeData] = useState<ChartItem[]>([]);
   const [pendingUsers, setPendingUsers] = useState<any[]>([]);
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
+  const [loadingSync, setLoadingSync] = useState(false);
 
   useEffect(() => {
     const fetchUserAndStats = async () => {
@@ -34,7 +49,6 @@ export default function DashboardPage() {
         const emailPayload = session.tokens?.idToken?.payload.email;
         setUserEmail(typeof emailPayload === "string" ? emailPayload : "Unknown User");
 
-        // Mock stats
         setStats({
           members: 128,
           provisionalMembers: 34,
@@ -46,7 +60,6 @@ export default function DashboardPage() {
           dashboards: 6838
         });
 
-        // Mock bar chart
         setUserTypeData([
           { type: "Members", value: 128, color: "#1f77b4" },
           { type: "Provisional Members", value: 34, color: "#ff7f0e" },
@@ -54,7 +67,6 @@ export default function DashboardPage() {
           { type: "Viewers", value: 56, color: "#d62728" },
         ]);
 
-        // Mock pending provisional members
         setPendingUsers([
           { name: "Jane Cooper", lastActive: "2 days ago", lastAssets: "3 uploaded docs, 2 shared workspaces", status: "Pending" },
           { name: "Wade Warren", lastActive: "5 days ago", lastAssets: "1 draft proposal, no recent uploads", status: "Pending" },
@@ -72,7 +84,7 @@ export default function DashboardPage() {
   }, [router]);
 
   const handleSignOut = async () => {
-    try { await signOut(); router.push("/"); } catch (err) { console.error("Error signing out:", err); }
+    try { await signOut(); router.push("/"); } catch (err) { console.error(err); }
   };
 
   const StatCard = ({ title, value, subtitle, expandKey, chartData }: any) => (
@@ -100,7 +112,7 @@ export default function DashboardPage() {
                 <XAxis dataKey="type" />
                 <YAxis />
                 <Tooltip />
-                {chartData.map((item, i) => (
+                {chartData.map((item: ChartItem, i: number) => (
                   <Bar key={i} dataKey="value" fill={item.color} name={item.type} />
                 ))}
               </BarChart>
@@ -115,7 +127,6 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-[#f5f5f5] font-sans flex flex-col">
       <ToastContainer position="top-right" autoClose={2000} hideProgressBar />
 
-      {/* Header */}
       <header className="bg-white shadow-sm px-10 py-6 flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-[#0f172a]">AlignSync Pro Dashboard</h1>
@@ -127,7 +138,6 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* Stats Cards */}
       <main className="flex-1 px-10 py-8 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
         <StatCard
           title="Seat / Member Types"
@@ -164,14 +174,12 @@ export default function DashboardPage() {
         />
       </main>
 
-      {/* Pending Provisional Members */}
       <section className="px-10 pb-12">
         <div className="bg-white rounded-2xl shadow-md p-8">
           <h2 className="text-2xl font-bold text-[#0f172a] mb-4">Pending Provisional Members</h2>
           <p className="text-gray-600 mb-4">
             Quick view of provisional members pending upgrade. Click "See More" for detailed assets and activity.
           </p>
-
           <div className="overflow-x-auto max-h-96">
             <table className="min-w-full text-sm text-left border border-gray-200 rounded-lg">
               <thead className="bg-[#f8fafc] border-b sticky top-0 z-10">
@@ -206,7 +214,6 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* Placeholder for Usage Trends */}
       <section className="px-10 pb-12">
         <div className="bg-white rounded-2xl p-8 shadow-md text-center text-gray-600">
           📊 <strong>Usage Trends & Growth Metrics</strong>
