@@ -59,6 +59,12 @@ export default function DashboardPage() {
     </motion.div>
   );
 
+  const CardFooter = ({ label }: { label: string }) => (
+    <p className="text-sm text-gray-500 mt-4 flex items-center justify-center gap-1 transform transition-transform hover:scale-105">
+      {label} <span className="text-gray-400">▼</span>
+    </p>
+  );
+
   return (
     <div className="min-h-screen bg-[#f5f5f5] font-sans flex flex-col">
       {/* Header */}
@@ -75,51 +81,59 @@ export default function DashboardPage() {
         {/* Seat / Member Types */}
         <div
           onClick={() => toggleExpand("seat")}
-          className="bg-white rounded-2xl shadow-md p-6 hover:shadow-xl cursor-pointer transition"
+          className="bg-white rounded-2xl shadow-md p-6 hover:shadow-xl cursor-pointer transition flex flex-col justify-between"
         >
-          <h2 className="text-2xl font-bold text-[#0f172a] mb-4">Seat / Member Types</h2>
-          <p>Members: <span className="text-blue-600 font-semibold">128</span></p>
-          <p>Provisional: <span className="text-blue-600 font-semibold">34</span></p>
-          <p>Guests: <span className="text-blue-600 font-semibold">20</span></p>
-          <p>Viewers: <span className="text-blue-600 font-semibold">15</span></p>
-          <p className="text-sm text-gray-500 mt-4">Click to view details</p>
+          <div>
+            <h2 className="text-2xl font-bold text-[#0f172a] mb-4">Seat / Member Types</h2>
+            <p>Members: <span className="text-blue-600 font-semibold">128</span></p>
+            <p>Provisional: <span className="text-blue-600 font-semibold">34</span></p>
+            <p>Guests: <span className="text-blue-600 font-semibold">20</span></p>
+            <p>Viewers: <span className="text-blue-600 font-semibold">15</span></p>
+          </div>
+          <CardFooter label="Click to view details" />
         </div>
 
         {/* Assets */}
         <div
           onClick={() => toggleExpand("assets")}
-          className="bg-white rounded-2xl shadow-md p-6 hover:shadow-xl cursor-pointer transition"
+          className="bg-white rounded-2xl shadow-md p-6 hover:shadow-xl cursor-pointer transition flex flex-col justify-between"
         >
-          <h2 className="text-2xl font-bold text-[#0f172a] mb-4">Assets & Workspaces</h2>
-          <p>Sheets: <span className="text-blue-600 font-semibold">17,184</span></p>
-          <p>Workspaces: <span className="text-blue-600 font-semibold">1,248</span></p>
-          <p>Reports: <span className="text-blue-600 font-semibold">24,937</span></p>
-          <p>Dashboards: <span className="text-blue-600 font-semibold">6,838</span></p>
-          <p className="text-sm text-gray-500 mt-4">Click to view details</p>
+          <div>
+            <h2 className="text-2xl font-bold text-[#0f172a] mb-4">Assets & Workspaces</h2>
+            <p>Sheets: <span className="text-blue-600 font-semibold">17,184</span></p>
+            <p>Workspaces: <span className="text-blue-600 font-semibold">1,248</span></p>
+            <p>Reports: <span className="text-blue-600 font-semibold">24,937</span></p>
+            <p>Dashboards: <span className="text-blue-600 font-semibold">6,838</span></p>
+          </div>
+          <CardFooter label="Click to view details" />
         </div>
 
         {/* Billing */}
         <div
           onClick={() => toggleExpand("billing")}
-          className="bg-white rounded-2xl shadow-md p-6 hover:shadow-xl cursor-pointer transition"
+          className="bg-white rounded-2xl shadow-md p-6 hover:shadow-xl cursor-pointer transition flex flex-col justify-between"
         >
-          <h2 className="text-2xl font-bold text-[#0f172a] mb-4">Billing Cycle</h2>
-          <p>Cycle: <span className="text-blue-600 font-semibold">Monthly</span></p>
-          <p>Next Renewal: <span className="text-blue-600 font-semibold">Oct 31, 2025</span></p>
-          <p>Auto-Renew: <span className="text-blue-600 font-semibold">Enabled</span></p>
-          <p className="text-sm text-gray-500 mt-4">Click to view breakdown</p>
+          <div>
+            <h2 className="text-2xl font-bold text-[#0f172a] mb-4">Billing Cycle</h2>
+            <p>Cycle: <span className="text-blue-600 font-semibold">Monthly</span></p>
+            <p>Next Renewal: <span className="text-blue-600 font-semibold">Oct 31, 2025</span></p>
+            <p>Auto-Renew: <span className="text-blue-600 font-semibold">Enabled</span></p>
+          </div>
+          <CardFooter label="Click to view breakdown" />
         </div>
 
         {/* Payment */}
         <div
           onClick={() => toggleExpand("payment")}
-          className="bg-white rounded-2xl shadow-md p-6 hover:shadow-xl cursor-pointer transition"
+          className="bg-white rounded-2xl shadow-md p-6 hover:shadow-xl cursor-pointer transition flex flex-col justify-between"
         >
-          <h2 className="text-2xl font-bold text-[#0f172a] mb-4">Payment Due</h2>
-          <p>Total Due: <span className="text-blue-600 font-semibold">$2,840</span></p>
-          <p>Next Invoice: <span className="text-blue-600 font-semibold">Oct 31, 2025</span></p>
-          <p>Status: <span className="text-blue-600 font-semibold">Active</span></p>
-          <p className="text-sm text-gray-500 mt-4">Click to view payment trends</p>
+          <div>
+            <h2 className="text-2xl font-bold text-[#0f172a] mb-4">Payment Due</h2>
+            <p>Total Due: <span className="text-blue-600 font-semibold">$2,840</span></p>
+            <p>Next Invoice: <span className="text-blue-600 font-semibold">Oct 31, 2025</span></p>
+            <p>Status: <span className="text-blue-600 font-semibold">Active</span></p>
+          </div>
+          <CardFooter label="Click to view payment trends" />
         </div>
       </main>
 
