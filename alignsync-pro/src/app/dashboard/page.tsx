@@ -4,11 +4,17 @@ import { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
 import { useRouter } from "next/navigation";
 import { fetchAuthSession, signOut } from "aws-amplify/auth";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { toast, ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import { ClipLoader } from 'react-spinners';
 import { motion, AnimatePresence } from "framer-motion";
+
+interface ChartItem {
+  type: string;
+  value: number;
+  color: string;
+}
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -23,7 +29,7 @@ export default function DashboardPage() {
     reports: 0,
     dashboards: 0
   });
-  const [userTypeData, setUserTypeData] = useState<any[]>([]);
+  const [userTypeData, setUserTypeData] = useState<ChartItem[]>([]);
   const [pendingUsers, setPendingUsers] = useState<any[]>([]);
   const [loadingSync, setLoadingSync] = useState(false);
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
@@ -76,7 +82,7 @@ export default function DashboardPage() {
     try { await signOut(); router.push("/"); } catch (err) { console.error("Error signing out:", err); }
   };
 
-  const StatCard = ({ title, value, subtitle, expandKey, chartData }: any) => (
+  const StatCard = ({ title, value, subtitle, expandKey, chartData }: { title: string; value: string | number; subtitle: string; expandKey: string; chartData?: ChartItem[] | null }) => (
     <div
       className="bg-white rounded-2xl shadow-md p-6 flex flex-col justify-between hover:shadow-xl transition-shadow cursor-pointer"
       onClick={() => setExpandedCard(expandedCard === expandKey ? null : expandKey)}
@@ -101,7 +107,7 @@ export default function DashboardPage() {
                 <XAxis dataKey="type" />
                 <YAxis />
                 <Tooltip />
-                {chartData.map((item, i) => (
+                {chartData.map((item: ChartItem, i: number) => (
                   <Bar key={i} dataKey="value" fill={item.color} name={item.type} />
                 ))}
               </BarChart>
@@ -111,10 +117,6 @@ export default function DashboardPage() {
       </AnimatePresence>
     </div>
   );
-
-  const handleSave = async () => {
-    toast.info("✅ No backend sync implemented yet.");
-  };
 
   return (
     <div className="min-h-screen bg-[#f5f5f5] font-sans flex flex-col">
@@ -210,9 +212,6 @@ export default function DashboardPage() {
           </div>
           <div className="mt-6 text-right flex items-center justify-end gap-4">
             {loadingSync && <ClipLoader size={20} color="#2563eb" />}
-            <button onClick={handleSave} className="bg-blue-600 text-white px-6 py-2 rounded-md font-semibold hover:bg-blue-700 shadow-sm transition-colors">
-              💾 Save Changes
-            </button>
           </div>
         </div>
       </section>
