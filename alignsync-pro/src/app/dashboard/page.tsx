@@ -12,21 +12,14 @@ import { ClipLoader } from 'react-spinners';
 export default function DashboardPage() {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [stats, setStats] = useState({
-    totalPaidMembers: 128,
-    provisionalMembers: 34,
-    guestMembers: 12,
-    viewers: 20,
-    assetsActivity: 412
-  });
+  const [stats, setStats] = useState({ totalPaidMembers: 128, provisionalMembers: 34, assetsActivity: 412, engagementRate: 78 });
   const [userTypeData, setUserTypeData] = useState([
-    { type: "Paid Members", active: 60, color: "#2563eb" },
-    { type: "Provisional Members", active: 20, color: "#fbbf24" },
-    { type: "Guest", active: 12, color: "#34d399" },
-    { type: "Viewers", active: 20, color: "#f87171" },
+    { type: "Internal Users", active: 32 },
+    { type: "External Users", active: 48 },
+    { type: "Provisional Members", active: 20 },
+    { type: "Paid Members", active: 60 },
   ]);
   const [pendingUsers, setPendingUsers] = useState<any[]>([]);
-  const [showAssets, setShowAssets] = useState(false);
   const [loadingSync, setLoadingSync] = useState(false);
 
   useEffect(() => {
@@ -57,14 +50,13 @@ export default function DashboardPage() {
     try { await signOut(); router.push("/"); } catch (err) { console.error("Error signing out:", err); }
   };
 
-  const StatCard = ({ title, value, subtitle, onClick }: any) => (
-    <div
-      className="bg-white rounded-2xl shadow-md p-6 flex flex-col justify-between hover:shadow-xl transition-shadow cursor-pointer min-w-[220px]"
-      onClick={onClick}
+  const StatCard = ({ title, value, subtitle, endpoint }: any) => (
+    <div className="bg-white rounded-2xl shadow-md p-6 flex flex-col justify-between hover:shadow-xl transition-shadow cursor-pointer min-w-[220px]"
+      onClick={() => toast.info(`Mock API call to ${endpoint}`)}
     >
       <div>
         <h2 className="text-2xl font-bold text-[#0f172a]">{title}</h2>
-        <p className="text-4xl font-extrabold text-blue-600 mt-3 break-words">{value}</p>
+        <p className="text-4xl font-extrabold text-blue-600 mt-3">{value}</p>
         <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
       </div>
     </div>
@@ -97,34 +89,10 @@ export default function DashboardPage() {
 
       {/* Stats Cards */}
       <main className="flex-1 px-10 py-8 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-        <StatCard
-          title="Seat / Member Types"
-          value={`Members ${stats.totalPaidMembers} | Provisional ${stats.provisionalMembers} | Guest ${stats.guestMembers} | Viewers ${stats.viewers}`}
-          subtitle="Click to expand"
-          onClick={() => toast.info("Expand to multi-colour chart")}
-        />
-        <StatCard
-          title="Assets & Workspaces"
-          value={
-            showAssets
-              ? "Sheets 17,184 | Workspaces 1,248 | Reports 24,937 | Dashboards 6,838"
-              : "412"
-          }
-          subtitle="Click to expand"
-          onClick={() => setShowAssets(!showAssets)}
-        />
-        <StatCard
-          title="Billing Cycle"
-          value="$12,345"
-          subtitle="Monthly revenue"
-          onClick={() => toast.info("Expand to billing details")}
-        />
-        <StatCard
-          title="Payment Due"
-          value="$2,140"
-          subtitle="Outstanding invoices"
-          onClick={() => toast.info("Expand to payment details")}
-        />
+        <StatCard title="Total Paid Members" value={stats.totalPaidMembers} subtitle="Active subscriptions this month" endpoint="/api/members/paid" />
+        <StatCard title="Provisional Members" value={stats.provisionalMembers} subtitle="Quarterly trials and onboarding" endpoint="/api/members/provisional" />
+        <StatCard title="Assets & Workspaces" value={stats.assetsActivity} subtitle="Activities in the last 91 days" endpoint="/api/assets/overview" />
+        <StatCard title="Engagement Rate" value={`${stats.engagementRate}%`} subtitle="Active users vs total members" endpoint="/api/engagement" />
       </main>
 
       {/* Active Users Chart */}
@@ -138,9 +106,7 @@ export default function DashboardPage() {
               <YAxis />
               <Tooltip />
               <Legend />
-              {userTypeData.map((u, idx) => (
-                <Bar key={idx} dataKey="active" name={u.type} fill={u.color} />
-              ))}
+              <Bar dataKey="active" fill="#2563eb" name="Active Users" />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -195,14 +161,6 @@ export default function DashboardPage() {
               💾 Save Changes
             </button>
           </div>
-        </div>
-      </section>
-
-      {/* Placeholder for Usage Trends */}
-      <section className="px-10 pb-12">
-        <div className="bg-white rounded-2xl p-8 shadow-md text-center text-gray-600">
-          📊 <strong>Usage Trends & Growth Metrics</strong>
-          <p className="mt-2 text-sm text-gray-500">#API: Connect this block to <code>/api/dashboard/trends</code></p>
         </div>
       </section>
 
