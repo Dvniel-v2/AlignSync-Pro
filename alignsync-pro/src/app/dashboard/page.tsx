@@ -6,13 +6,18 @@ import { useRouter } from "next/navigation";
 import { fetchAuthSession, signOut } from "aws-amplify/auth";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { toast, ToastContainer } from "react-toastify";
-import 'react-toastify/dist/ReactToastify.css';
-import { ClipLoader } from 'react-spinners';
+import "react-toastify/dist/ReactToastify.css";
+import { ClipLoader } from "react-spinners";
 
 export default function DashboardPage() {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [stats, setStats] = useState({ totalPaidMembers: 0, provisionalMembers: 0, assetsActivity: 0, engagementRate: 0 });
+  const [stats, setStats] = useState({
+    totalMembers: 0,
+    assetsActivity: 0,
+    billingCycle: "Quarterly",
+    paymentDue: "$0",
+  });
   const [userTypeData, setUserTypeData] = useState<{ type: string; active: number }[]>([]);
   const [pendingUsers, setPendingUsers] = useState<any[]>([]);
   const [loadingSync, setLoadingSync] = useState(false);
@@ -24,15 +29,20 @@ export default function DashboardPage() {
         const emailPayload = session.tokens?.idToken?.payload.email;
         setUserEmail(typeof emailPayload === "string" ? emailPayload : "Unknown User");
 
-        // Mock stats
-        setStats({ totalPaidMembers: 128, provisionalMembers: 34, assetsActivity: 412, engagementRate: 78 });
+        // Mock stats updated
+        setStats({
+          totalMembers: 162, // Paid + Provisional
+          assetsActivity: 412,
+          billingCycle: "Quarterly (Next: Dec 31, 2025)",
+          paymentDue: "$12,480",
+        });
 
-        // Mock bar chart
+        // Mock bar chart data
         setUserTypeData([
           { type: "Internal Users", active: 32 },
           { type: "External Users", active: 48 },
           { type: "Provisional Members", active: 20 },
-          { type: "Paid Members", active: 60 },
+          { type: "Paid Members", active: 62 },
         ]);
 
         // Mock pending provisional members
@@ -53,11 +63,19 @@ export default function DashboardPage() {
   }, [router]);
 
   const handleSignOut = async () => {
-    try { await signOut(); router.push("/"); } catch (err) { console.error("Error signing out:", err); }
+    try {
+      await signOut();
+      router.push("/");
+    } catch (err) {
+      console.error("Error signing out:", err);
+    }
   };
 
   const StatCard = ({ title, value, subtitle, endpoint }: any) => (
-    <div className="bg-white rounded-2xl shadow-md p-6 flex flex-col justify-between hover:shadow-xl transition-shadow cursor-pointer" onClick={() => toast.info(`Mock API call to ${endpoint}`)}>
+    <div
+      className="bg-white rounded-2xl shadow-md p-6 flex flex-col justify-between hover:shadow-xl transition-shadow cursor-pointer"
+      onClick={() => toast.info(`Mock API call to ${endpoint}`)}
+    >
       <div>
         <h2 className="text-2xl font-bold text-[#0f172a]">{title}</h2>
         <p className="text-4xl font-extrabold text-blue-600 mt-3">{value}</p>
@@ -82,16 +100,41 @@ export default function DashboardPage() {
         </div>
         <div className="flex items-center space-x-8">
           <NavBar />
-          <button onClick={handleSignOut} className="bg-red-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-red-700">Sign Out</button>
+          <button
+            onClick={handleSignOut}
+            className="bg-red-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-red-700"
+          >
+            Sign Out
+          </button>
         </div>
       </header>
 
-      {/* Stats Cards */}
+      {/* Updated Stat Cards */}
       <main className="flex-1 px-10 py-8 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-        <StatCard title="Total Paid Members" value={stats.totalPaidMembers} subtitle="Active subscriptions this month" endpoint="/api/members/paid" />
-        <StatCard title="Provisional Members" value={stats.provisionalMembers} subtitle="Quarterly trials and onboarding" endpoint="/api/members/provisional" />
-        <StatCard title="Assets & Workspaces" value={stats.assetsActivity} subtitle="Activities in the last 91 days" endpoint="/api/assets/overview" />
-        <StatCard title="Engagement Rate" value={`${stats.engagementRate}%`} subtitle="Active users vs total members" endpoint="/api/engagement" />
+        <StatCard
+          title="Seat / Member Types"
+          value={stats.totalMembers}
+          subtitle="Paid + Provisional members combined"
+          endpoint="/api/members/overview"
+        />
+        <StatCard
+          title="Assets & Workspaces"
+          value={stats.assetsActivity}
+          subtitle="Active assets and workspace activity"
+          endpoint="/api/assets/overview"
+        />
+        <StatCard
+          title="Billing Cycle"
+          value={stats.billingCycle}
+          subtitle="Current billing schedule"
+          endpoint="/api/billing/cycle"
+        />
+        <StatCard
+          title="Payment Due"
+          value={stats.paymentDue}
+          subtitle="Pending amount for this billing cycle"
+          endpoint="/api/billing/payment-due"
+        />
       </main>
 
       {/* Active Users Chart */}
@@ -105,7 +148,7 @@ export default function DashboardPage() {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar dataKey="active" fill="#2563eb" name="Active Users" />
+              <Bar dataKey="active" fill="#5a85e1ff" name="Active Users" />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -152,7 +195,10 @@ export default function DashboardPage() {
           </div>
           <div className="mt-6 text-right flex items-center justify-end gap-4">
             {loadingSync && <ClipLoader size={20} color="#2563eb" />}
-            <button onClick={handleSave} className="bg-blue-600 text-white px-6 py-2 rounded-md font-semibold hover:bg-blue-700 shadow-sm transition-colors">
+            <button
+              onClick={handleSave}
+              className="bg-blue-600 text-white px-6 py-2 rounded-md font-semibold hover:bg-blue-700 shadow-sm transition-colors"
+            >
               💾 Save Changes
             </button>
           </div>
@@ -163,7 +209,9 @@ export default function DashboardPage() {
       <section className="px-10 pb-12">
         <div className="bg-white rounded-2xl p-8 shadow-md text-center text-gray-600">
           📊 <strong>Usage Trends & Growth Metrics</strong>
-          <p className="mt-2 text-sm text-gray-500">#API: Connect this block to <code>/api/dashboard/trends</code></p>
+          <p className="mt-2 text-sm text-gray-500">
+            #API: Connect this block to <code>/api/dashboard/trends</code>
+          </p>
         </div>
       </section>
 
