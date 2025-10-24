@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import NavBar from "../components/NavBar";
+import { useRouter } from "next/navigation";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [expanded, setExpanded] = useState<string | null>(null);
   const toggleExpand = (section: string) => setExpanded(expanded === section ? null : section);
 
@@ -33,6 +35,15 @@ export default function DashboardPage() {
     { type: "Paid", count: 58 },
     { type: "Pending", count: 8 },
     { type: "Overdue", count: 3 },
+  ];
+
+  const pendingUsers = [
+    { name: "Jane Cooper", lastActive: "2 days ago", lastAssets: "3 uploaded docs, 2 shared workspaces", status: "Pending" },
+    { name: "Wade Warren", lastActive: "5 days ago", lastAssets: "1 draft proposal, no recent uploads", status: "Pending" },
+    { name: "Devon Lane", lastActive: "8 days ago", lastAssets: "No activity in 7 days", status: "Pending" },
+    { name: "Robert Fox", lastActive: "10 days ago", lastAssets: "Viewed internal dashboard", status: "Pending" },
+    { name: "Theresa Webb", lastActive: "1 day ago", lastAssets: "2 asset downloads, 1 feedback log", status: "Pending" },
+    { name: "Alex Morgan", lastActive: "7 days ago", lastAssets: "1 shared doc, 2 comments", status: "Pending" },
   ];
 
   const ExpandableCard = ({ title, children }: any) => (
@@ -123,10 +134,12 @@ export default function DashboardPage() {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="count" fill="#3b82f6" name="Members" />
-                <Bar dataKey="count" fill="#f59e0b" name="Provisional" />
-                <Bar dataKey="count" fill="#10b981" name="Guests" />
-                <Bar dataKey="count" fill="#8b5cf6" name="Viewers" />
+                {seatBreakdownData.map((item, i) => (
+                  <Bar key={i} dataKey="count" fill={item.type === "Members" ? "#3b82f6" :
+                                                     item.type === "Provisional Members" ? "#f59e0b" :
+                                                     item.type === "Guests" ? "#10b981" : "#8b5cf6"} 
+                       name={item.type} />
+                ))}
               </BarChart>
             </ResponsiveContainer>
           </ExpandableCard>
@@ -141,10 +154,12 @@ export default function DashboardPage() {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="count" fill="#3b82f6" name="Sheets" />
-                <Bar dataKey="count" fill="#22c55e" name="Workspaces" />
-                <Bar dataKey="count" fill="#f59e0b" name="Reports" />
-                <Bar dataKey="count" fill="#8b5cf6" name="Dashboards" />
+                {assetsBreakdownData.map((item, i) => (
+                  <Bar key={i} dataKey="count" fill={item.type === "Sheets" ? "#3b82f6" :
+                                                     item.type === "Workspaces" ? "#22c55e" :
+                                                     item.type === "Reports" ? "#f59e0b" : "#8b5cf6"} 
+                       name={item.type} />
+                ))}
               </BarChart>
             </ResponsiveContainer>
           </ExpandableCard>
@@ -159,9 +174,11 @@ export default function DashboardPage() {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="count" fill="#3b82f6" name="Monthly" />
-                <Bar dataKey="count" fill="#f59e0b" name="Quarterly" />
-                <Bar dataKey="count" fill="#10b981" name="Annual" />
+                {billingBreakdownData.map((item, i) => (
+                  <Bar key={i} dataKey="count" fill={item.type === "Monthly" ? "#3b82f6" :
+                                                     item.type === "Quarterly" ? "#f59e0b" : "#10b981"} 
+                       name={item.type} />
+                ))}
               </BarChart>
             </ResponsiveContainer>
           </ExpandableCard>
@@ -176,14 +193,58 @@ export default function DashboardPage() {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="count" fill="#3b82f6" name="Paid" />
-                <Bar dataKey="count" fill="#f59e0b" name="Pending" />
-                <Bar dataKey="count" fill="#ef4444" name="Overdue" />
+                {paymentBreakdownData.map((item, i) => (
+                  <Bar key={i} dataKey="count" fill={item.type === "Paid" ? "#3b82f6" :
+                                                     item.type === "Pending" ? "#f59e0b" : "#ef4444"} 
+                       name={item.type} />
+                ))}
               </BarChart>
             </ResponsiveContainer>
           </ExpandableCard>
         )}
       </AnimatePresence>
+
+      {/* Pending Provisional Members */}
+      <section className="px-10 pb-12">
+        <div className="bg-white rounded-2xl shadow-md p-8 mt-6">
+          <h2 className="text-2xl font-bold text-[#0f172a] mb-4">Pending Provisional Members</h2>
+          <p className="text-gray-600 mb-4">
+            Quick view of provisional members pending upgrade.
+          </p>
+
+          <div className="overflow-x-auto max-h-96">
+            <table className="min-w-full text-sm text-left border border-gray-200 rounded-lg">
+              <thead className="bg-[#f8fafc] border-b sticky top-0 z-10">
+                <tr>
+                  <th className="px-4 py-3 font-semibold text-gray-700">Name</th>
+                  <th className="px-4 py-3 font-semibold text-gray-700">Last Active</th>
+                  <th className="px-4 py-3 font-semibold text-gray-700">Last Assets / Activity</th>
+                  <th className="px-4 py-3 font-semibold text-gray-700">Status</th>
+                  <th className="px-4 py-3 font-semibold text-gray-700">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingUsers.map((user, i) => (
+                  <tr key={i} className="border-b hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3">{user.name}</td>
+                    <td className="px-4 py-3">{user.lastActive}</td>
+                    <td className="px-4 py-3 text-gray-600">{user.lastAssets}</td>
+                    <td className="px-4 py-3 font-semibold text-yellow-600">{user.status}</td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => router.push(`/users/${encodeURIComponent(user.name)}`)}
+                        className="bg-blue-600 text-white px-4 py-1 rounded-md text-sm hover:bg-blue-700 transition-colors"
+                      >
+                        See More
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
 
       <footer className="text-center py-6 text-xs text-gray-500 border-t">
         © {new Date().getFullYear()} AlignSync Pro. All rights reserved.
